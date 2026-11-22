@@ -29,7 +29,7 @@ export const RULES = [
   ['snacks', 'seeds', /семечки жарен/],
   ['oilsSauces', 'salt', /соль|специ|приправ|паприк|куркум|корица|молот\S* перец|перец молот/],
   ['oilsSauces', 'butter', /масло сливоч|масло топл|спред|маргарин/],
-  ['vegetables', 'olive', /маслин|оливк/],                     // before "oil/butter"
+  ['vegetables', 'olive', /маслин|оливк(?!ов)/],                        // before "oil/butter"
   ['oilsSauces', 'oil', /масло/],
   ['oilsSauces', 'jar', /майонез|соус|горчиц|хрен|аджик|песто|ткемали|сметанн\S* соус/],
   ['oilsSauces', 'tomato', /кетчуп|томатн\S* паст/],
