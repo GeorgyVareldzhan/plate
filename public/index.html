@@ -185,6 +185,13 @@
             <span class="form-row__input"><input name="carbs" type="text" inputmode="numeric" autocomplete="off" placeholder="—"><em data-i18n="unit.g">g</em></span>
           </li>
         </ul>
+        <ul class="group group--form group--spaced">
+          <li class="form-row">
+            <label class="form-row__label" for="targets-carry" data-i18n="targets.carry">Carry over calories</label>
+            <input id="targets-carry" name="carryOver" type="checkbox" class="switch">
+          </li>
+        </ul>
+        <p class="footnote" data-i18n="targets.carryNote">Calories over or under the target are split evenly across the next two days within the week (Monday to Sunday), by at most 10% of the target.</p>
         <p class="footnote" data-i18n="targets.note">3% tolerance. Leave a field empty to track the value without highlighting. A new day takes its targets from the previous one.</p>
       </div>
     </form>

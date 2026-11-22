@@ -1,7 +1,7 @@
 /** "Days" and "Day" screens: targets, meals, portions and totals */
 import { db } from './db.js';
 import {
-  MACROS, EMPTY_TARGETS, portion, sumNutrition, targetStatus, statusClass,
+  MACROS, EMPTY_TARGETS, sumNutrition, targetStatus, statusClass, kcalTargets,
 } from './calc.js';
 import { $, h, fmt0, num, toInput, debounce } from './dom.js';
 import { t, locale, macrosLine } from './i18n.js';
@@ -18,6 +18,7 @@ const MAX_MEALS = 10;
 const MACRO_NAMES = { protein: 'macro.protein', fat: 'macro.fat', carbs: 'macro.carbs' };
 
 let current = null; // currently open day
+let otherDays = []; // the rest of the days — previous days set the calorie target with carry-over
 let productsById = new Map();
 
 const daysListEl = $('#days-list');
@@ -106,12 +107,17 @@ export function initDays() {
     }
     current.date = dateEl.value;
     renderTitle();
+    renderTotals();
     saveSoon();
   });
 
   targetsForm.addEventListener('input', (e) => {
-    const value = num(e.target.value);
-    current.targets[e.target.name] = Number.isFinite(value) && value > 0 ? value : null;
+    if (e.target.type === 'checkbox') {
+      current.targets[e.target.name] = e.target.checked;
+    } else {
+      const value = num(e.target.value);
+      current.targets[e.target.name] = Number.isFinite(value) && value > 0 ? value : null;
+    }
     renderTotals();
     saveSoon();
   });
@@ -161,11 +167,12 @@ export async function showDays() {
   totalsEl.classList.remove('is-visible');
   const [days] = await Promise.all([db.all('days'), refreshProducts()]);
   days.sort(byDateDesc);
+  const kcalTarget = kcalTargets(days, productsById);
 
   daysListEl.replaceChildren(...days.map((day) => {
     const total = sumNutrition(allItems(day), productsById);
     const meals = day.meals.filter((m) => m.items.length).length;
-    const target = day.targets?.kcal;
+    const { target } = kcalTarget(day);
     const status = targetStatus('kcal', total.kcal, target);
     const date = parseIso(day.date);
 
@@ -211,12 +218,14 @@ async function createDay() {
 /* ---------- Day ---------- */
 
 export async function showDay(id) {
-  const [day] = await Promise.all([db.get('days', id), refreshProducts()]);
+  const [days] = await Promise.all([db.all('days'), refreshProducts()]);
+  const day = days.find((d) => d.id === id);
   if (!day) {
     go('days');
     return false;
   }
   current = day;
+  otherDays = days.filter((d) => d !== day);
   current.targets = { ...EMPTY_TARGETS, ...current.targets };
   if (!current.meals.length) current.meals.push({ items: [] });
 
@@ -243,14 +252,17 @@ function openDayActions() {
 /** Day menu image to the system share sheet (synchronous — Safari requires a user gesture) */
 function shareDay() {
   const date = capitalize(fmtFull.format(parseIso(current.date)));
-  const canvas = renderDayImage({ day: current, productsById, date });
+  const canvas = renderDayImage({ day: current, productsById, date, kcalTarget: currentKcalTarget().target });
   const file = canvasToFile(canvas, `plate-${current.date}.png`);
   shareFile(file, `Plate · ${date}`);
 }
 
 function openTargets() {
   for (const [key, value] of Object.entries(current.targets)) {
-    if (targetsForm.elements[key]) targetsForm.elements[key].value = value ? toInput(value) : '';
+    const field = targetsForm.elements[key];
+    if (!field) continue;
+    if (field.type === 'checkbox') field.checked = Boolean(value);
+    else field.value = value ? toInput(value) : '';
   }
   targetsDialog.showModal();
 }
@@ -317,10 +329,22 @@ function kcalHint(total, target) {
   return diff >= 0 ? t('summary.left', { value: fmt0.format(diff) }) : t('summary.over', { value: fmt0.format(-diff) });
 }
 
+/** Calorie target of the open day, with carry-over from the previous days */
+const currentKcalTarget = () => kcalTargets([...otherDays, current], productsById)(current);
+
+/** "Target −50 kcal for going over on previous days" — only when the carry is noticeable */
+function carryNote(carry) {
+  const value = Math.round(Math.abs(carry));
+  if (!value) return [];
+  return h('p', { class: 'summary__carry' },
+    t(carry < 0 ? 'summary.carryMinus' : 'summary.carryPlus', { value: fmt0.format(value) }));
+}
+
 /** Summary at the top of the day and compact bar at the bottom */
 function renderTotals() {
   const sum = sumNutrition(allItems(current), productsById);
-  const targets = current.targets;
+  const kcal = currentKcalTarget();
+  const targets = { ...current.targets, kcal: kcal.target };
   const kcalStatus = targetStatus('kcal', sum.kcal, targets.kcal);
   const hint = kcalHint(sum.kcal, targets.kcal);
 
@@ -349,6 +373,7 @@ function renderTotals() {
         bar(sum[key], targets[key], key, status),
       );
     })),
+    ...[carryNote(kcal.carry)].flat(),
     h('div', { class: 'summary__foot' },
       h('span', { class: `summary__hint ${statusClass(kcalStatus)}` }, hint || t('summary.noTargets')),
       h('button', { type: 'button', class: 'summary__goals', onclick: openTargets },

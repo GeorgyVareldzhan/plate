@@ -60,10 +60,14 @@ export default {
   'summary.targets': 'Targets',
   'summary.setTargets': 'Set targets',
   'summary.ofKcal': 'of {value} kcal',
+  'summary.carryMinus': 'Target −{value} kcal for going over on previous days',
+  'summary.carryPlus': 'Target +{value} kcal for staying under on previous days',
 
   // Targets dialog
   'targets.atMost': 'at most',
   'targets.atLeast': 'at least',
+  'targets.carry': 'Carry over calories',
+  'targets.carryNote': 'Calories over or under the target are split evenly across the next two days within the week (Monday to Sunday), by at most 10% of the target.',
   'targets.note': '3% tolerance. Leave a field empty to track the value without highlighting. A new day takes its targets from the previous one.',
 
   // Products

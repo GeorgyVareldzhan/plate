@@ -16,7 +16,13 @@ export const MACROS = [
 // Target direction: max — "at most", min — "at least"
 export const TARGET_DIRECTION = { kcal: 'max', protein: 'min', fat: 'max', carbs: 'max' };
 
-export const EMPTY_TARGETS = { kcal: null, protein: null, fat: null, carbs: null };
+// carryOver — calories over or under the target move to the following days
+export const EMPTY_TARGETS = { kcal: null, protein: null, fat: null, carbs: null, carryOver: false };
+
+// Carry-over: a day's calorie deviation is split evenly across this many following days,
+// and a day's target moves by at most this share of its base target
+export const CARRY_DAYS = 2;
+export const CARRY_LIMIT = 0.1;
 
 /** Nutrition of a product portion (product values are per 100 g) */
 export function portion(product, grams) {
@@ -53,3 +59,62 @@ export function targetStatus(key, value, target) {
 }
 
 export const statusClass = (status) => (status ? `is-${status}` : '');
+
+/** ISO date (YYYY-MM-DD) shifted by a number of days */
+export function shiftIso(iso, days) {
+  const [y, m, d] = iso.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d + days));
+  return date.toISOString().slice(0, 10);
+}
+
+/** Day of the week counted from Monday: 0 — Monday … 6 — Sunday */
+export function weekdayFromMonday(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7;
+}
+
+/** Monday of the week the date belongs to */
+export const weekStart = (iso) => shiftIso(iso, -weekdayFromMonday(iso));
+
+/**
+ * Calorie targets with carry-over. Returns day → { target, base, carry }.
+ *
+ * With targets.carryOver on, a day receives half of the deviation (eaten minus its own
+ * effective target) of each of the two previous calendar days: 1600 eaten against 1500
+ * makes the next two targets 1450. Only days with products count — a skipped or empty
+ * day neither gives nor receives anything from itself. The carry is capped at ±10% of
+ * the base target; the rest is dropped. If several days share a date, the latest
+ * created one counts. Weeks start on Monday and the carry never crosses into the next
+ * week: Saturday's deviation goes to Sunday alone, Sunday's is dropped.
+ */
+export function kcalTargets(days, productsById) {
+  const byDate = new Map();
+  for (const day of days) {
+    const other = byDate.get(day.date);
+    if (!other || day.createdAt > other.createdAt) byDate.set(day.date, day);
+  }
+  const memo = new Map();
+  const eaten = (day) => sumNutrition(day.meals.flatMap((m) => m.items), productsById).kcal;
+  const hasItems = (day) => day.meals.some((m) => m.items.length);
+
+  function resolve(day) {
+    if (memo.has(day)) return memo.get(day);
+    const base = day.targets?.kcal > 0 ? day.targets.kcal : null;
+    let carry = 0;
+    if (base && day.targets.carryOver) {
+      for (let k = 1; k <= CARRY_DAYS; k++) {
+        const prev = byDate.get(shiftIso(day.date, -k));
+        if (!prev || prev === day || !hasItems(prev) || !(prev.targets?.kcal > 0)) continue;
+        if (weekStart(prev.date) !== weekStart(day.date)) continue;
+        const daysLeftInWeek = 6 - weekdayFromMonday(prev.date);
+        carry -= (eaten(prev) - resolve(prev).target) / Math.min(CARRY_DAYS, daysLeftInWeek);
+      }
+      const limit = base * CARRY_LIMIT;
+      carry = Math.max(-limit, Math.min(limit, carry));
+    }
+    const result = { target: base && base + carry, base, carry };
+    memo.set(day, result);
+    return result;
+  }
+  return resolve;
+}

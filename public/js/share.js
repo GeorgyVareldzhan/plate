@@ -74,9 +74,10 @@ const statusColor = (status) => (status === 'ok' ? C.ok : status === 'bad' ? C.b
 
 /**
  * Draw the day card.
- * day — { targets, meals }, productsById — Map, date — date label ("Saturday, 22 November 2026").
+ * day — { targets, meals }, productsById — Map, date — date label ("Saturday, 22 November 2026"),
+ * kcalTarget — calorie target with carry-over (defaults to the day's own target).
  */
-export function renderDayImage({ day, productsById, date }) {
+export function renderDayImage({ day, productsById, date, kcalTarget }) {
   const meals = day.meals
     .map((meal, index) => ({ index, items: meal.items.filter((i) => i.grams > 0) }))
     .filter((m) => m.items.length);
@@ -133,7 +134,7 @@ export function renderDayImage({ day, productsById, date }) {
 
   // --- Day total
   const sum = sumNutrition(day.meals.flatMap((m) => m.items), productsById);
-  const targets = day.targets ?? {};
+  const targets = { ...day.targets, kcal: kcalTarget ?? day.targets?.kcal };
   roundRect(ctx, CARD_X, y, CARD_W, SUMMARY_H - 40, 28); // 240
   ctx.fillStyle = C.card;
   ctx.fill();
