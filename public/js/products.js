@@ -33,8 +33,8 @@ function nameInSection(name, section) {
   return rest.charAt(0).toUpperCase() + rest.slice(1);
 }
 
-/** Product row: icon, name, macros, calories. section — the section the row is shown in. */
-export function productRow(product, onClick, { chevron = false, section = null } = {}) {
+/** Product row: icon, name, macros, calories. section — the section the row is shown in; note — extra text before the macros. */
+export function productRow(product, onClick, { chevron = false, section = null, note = null } = {}) {
   const piece = product.pieceGrams
     ? ` · ${t('products.piece', { pcs: t('unit.pcs'), grams: fmt0.format(product.pieceGrams), g: t('unit.g') })}`
     : '';
@@ -43,7 +43,7 @@ export function productRow(product, onClick, { chevron = false, section = null }
       iconTile(product),
       h('span', { class: 'row__body' },
         h('span', { class: 'row__title' }, nameInSection(product.name, section)),
-        h('span', { class: 'row__sub' }, macrosLine(product) + piece),
+        h('span', { class: 'row__sub' }, note ? `${note} · ${macrosLine(product)}${piece}` : macrosLine(product) + piece),
       ),
       h('span', { class: 'row__value' }, `${fmt0.format(product.kcal)} ${t('unit.kcal')}`),
       chevron ? icon('chevronRight', 18, 'row__chevron') : null,
@@ -53,7 +53,7 @@ export function productRow(product, onClick, { chevron = false, section = null }
 
 /**
  * Product list by section. When searching — a single list.
- * sections: extra sections on top, e.g. [['Recent', [...]]].
+ * sections: extra sections on top, e.g. [['Frequent', [...]]].
  */
 export function renderGrouped(container, list, makeRow, { searching = false, sections = [] } = {}) {
   const groups = [];

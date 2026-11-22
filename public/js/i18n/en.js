@@ -113,7 +113,8 @@ export default {
   // Picker
   'picker.search': 'Search products',
   'picker.dishes': 'Dishes',
-  'picker.recent': 'Recent',
+  'picker.frequent': 'Frequent',
+  'picker.timesUsed': { one: 'used once', other: 'used {count} times' },
   'picker.notFound': 'Nothing found. Tap “New” to create “{query}”.',
   'picker.ingredient': 'Ingredient',
 

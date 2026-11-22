@@ -100,7 +100,8 @@ export default {
 
   'picker.search': 'Поиск продукта',
   'picker.dishes': 'Блюда',
-  'picker.recent': 'Недавние',
+  'picker.frequent': 'Частые',
+  'picker.timesUsed': { one: '{count} раз', few: '{count} раза', many: '{count} раз', other: '{count} раза' },
   'picker.notFound': 'Ничего не найдено. Нажмите «Новый», чтобы создать «{query}».',
   'picker.ingredient': 'Ингредиент',
 
