@@ -1,0 +1,192 @@
+/**
+ * Экраны «Блюда» и редактор блюда.
+ * Блюдо — шаблон из продуктов с граммовками. При добавлении в приём его ингредиенты копируются
+ * в приём по отдельности, и дальше их можно менять, не трогая само блюдо.
+ */
+import { db } from './db.js';
+import { sumNutrition } from './calc.js';
+import { $, h, fmt0, fmt1, debounce } from './dom.js';
+import { loadProducts } from './products.js';
+import { iconTile } from './icons.js';
+import { swipeRow, actionSheet } from './ui.js';
+import { itemRow, addRow, newItem } from './itemrow.js';
+import { openPicker } from './picker.js';
+import { go } from './nav.js';
+
+let current = null; // открытое блюдо
+let productsById = new Map();
+
+const listEl = $('#dishes-list');
+const emptyEl = $('#dishes-empty');
+const nameEl = $('#dish-name');
+const summaryEl = $('#dish-summary');
+const itemsEl = $('#dish-items');
+
+const saveSoon = debounce(saveCurrent, 400);
+
+async function saveCurrent() {
+  if (!current) return;
+  current.updatedAt = Date.now();
+  // Блюдо изменено в приложении — обновления стартового списка его больше не трогают
+  delete current.seed;
+  await db.put('dishes', current);
+}
+
+/** Сразу записать отложенные правки блюда — например, перед перезагрузкой */
+export function flushDish() {
+  return saveSoon.flush();
+}
+
+async function refreshProducts() {
+  const products = await loadProducts();
+  productsById = new Map(products.map((p) => [p.id, p]));
+  return productsById;
+}
+
+export async function loadDishes() {
+  const dishes = await db.all('dishes');
+  return dishes.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ru'));
+}
+
+const dishName = (dish) => dish.name.trim() || 'Без названия';
+
+/** Состав одной строкой: «Яйцо куриное 3 шт · Масло сливочное 5 г» */
+function compositionLine(dish, byId) {
+  if (!dish.items.length) return 'Пусто';
+  return dish.items.map((i) => {
+    const p = byId.get(i.productId);
+    if (!p) return null;
+    const amount = i.unit === 'pcs' && p.pieceGrams
+      ? `${fmt1.format(i.grams / p.pieceGrams)} шт`
+      : `${fmt0.format(i.grams)} г`;
+    return `${p.name} ${amount}`;
+  }).filter(Boolean).join(' · ');
+}
+
+/** Строка блюда для списков (в т. ч. окна выбора продукта) */
+export function dishRow(dish, byId, onClick, { chevron = false } = {}) {
+  const total = sumNutrition(dish.items, byId);
+  return h('li', {},
+    h('button', { type: 'button', class: 'row', onclick: onClick },
+      iconTile({ name: dish.name, icon: dish.icon }),
+      h('span', { class: 'row__body' },
+        h('span', { class: 'row__title' }, dishName(dish)),
+        h('span', { class: 'row__sub' }, compositionLine(dish, byId)),
+      ),
+      h('span', { class: 'row__value' }, `${fmt0.format(total.kcal)} ккал`),
+      chevron ? h('span', { class: 'row__chevron', 'aria-hidden': 'true' }, '›') : null,
+    ),
+  );
+}
+
+export function initDishes() {
+  $('#dishes-add').addEventListener('click', createDish);
+  $('#dishes-empty-add').addEventListener('click', createDish);
+  $('#dish-back').addEventListener('click', async () => {
+    await saveSoon.flush();
+    go('dishes');
+  });
+  $('#dish-more').addEventListener('click', () => actionSheet(null, [
+    { label: 'Удалить блюдо', danger: true, onClick: () => deleteDish(current) },
+  ]));
+  nameEl.addEventListener('input', () => {
+    current.name = nameEl.value;
+    saveSoon();
+  });
+  nameEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') nameEl.blur(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) saveSoon.flush(); });
+}
+
+/* ---------- Список ---------- */
+
+export async function showDishes() {
+  await saveSoon.flush();
+  current = null;
+  const [dishes, byId] = await Promise.all([loadDishes(), refreshProducts()]);
+  listEl.replaceChildren(...dishes.map((dish) => {
+    const row = dishRow(dish, byId, () => go('dish', dish.id));
+    // Свайп для удаления: оборачиваем кнопку строки
+    return swipeRow(row.firstElementChild, () => deleteDish(dish));
+  }));
+  listEl.hidden = dishes.length === 0;
+  emptyEl.hidden = dishes.length > 0;
+}
+
+async function createDish() {
+  const now = Date.now();
+  const dish = { name: '', items: [], createdAt: now, updatedAt: now };
+  dish.id = await db.put('dishes', dish);
+  await go('dish', dish.id);
+  nameEl.focus();
+}
+
+async function deleteDish(dish) {
+  if (!confirm(`Удалить блюдо «${dishName(dish)}»? В уже составленных днях продукты останутся.`)) return;
+  if (current?.id === dish.id) {
+    saveSoon.cancel();
+    current = null;
+  }
+  await db.delete('dishes', dish.id);
+  go('dishes');
+}
+
+/* ---------- Редактор ---------- */
+
+export async function showDish(id) {
+  const [dish] = await Promise.all([db.get('dishes', id), refreshProducts()]);
+  if (!dish) {
+    go('dishes');
+    return false;
+  }
+  current = dish;
+  nameEl.value = dish.name;
+  renderItems();
+  renderSummary();
+}
+
+function changed() {
+  renderSummary();
+  saveSoon();
+}
+
+function renderItems() {
+  itemsEl.replaceChildren(
+    ...current.items.map((item, index) => itemRow({
+      item,
+      product: productsById.get(item.productId),
+      onChange: changed,
+      onDelete: () => {
+        current.items.splice(index, 1);
+        renderItems();
+        changed();
+      },
+    })),
+    addRow('Добавить ингредиент', () => openPicker({
+      title: 'Ингредиент',
+      onProduct: async (product) => {
+        await refreshProducts();
+        current.items.push(newItem(product));
+        renderItems();
+        changed();
+      },
+    })),
+  );
+}
+
+function renderSummary() {
+  const t = sumNutrition(current.items, productsById);
+  const grams = current.items.reduce((sum, i) => sum + i.grams, 0);
+  summaryEl.replaceChildren(
+    h('div', { class: 'dish-summary__main' },
+      h('span', { class: 'dish-summary__kcal' }, fmt0.format(t.kcal)),
+      h('span', { class: 'muted' }, ` ккал · ${fmt0.format(grams)} г`),
+    ),
+    h('div', { class: 'dish-summary__macros' },
+      ...[['protein', 'Белки'], ['fat', 'Жиры'], ['carbs', 'Углеводы']].map(([key, label]) =>
+        h('div', { class: `dish-macro dish-macro--${key}` },
+          h('b', {}, fmt1.format(t[key])),
+          h('span', {}, `${label}, г`),
+        )),
+    ),
+  );
+}
