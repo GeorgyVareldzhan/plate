@@ -172,7 +172,7 @@ export async function showDays() {
   daysListEl.replaceChildren(...days.map((day) => {
     const total = sumNutrition(allItems(day), productsById);
     const meals = day.meals.filter((m) => m.items.length).length;
-    const { target } = kcalTarget(day);
+    const { target, carry } = kcalTarget(day);
     const status = targetStatus('kcal', total.kcal, target);
     const date = parseIso(day.date);
 
@@ -190,7 +190,8 @@ export async function showDays() {
       ),
       h('span', { class: 'day-row__kcal' },
         h('b', { class: statusClass(status) }, fmt0.format(total.kcal)),
-        h('small', {}, target ? t('days.of', { value: fmt0.format(target) }) : t('unit.kcal')),
+        h('small', {}, target ? t('days.of', { value: fmt0.format(target) }) : t('unit.kcal'),
+          Math.round(carry) ? h('span', { class: `carry-badge carry-badge--${carry < 0 ? 'minus' : 'plus'}` }, signed(Math.round(carry))) : null),
       ),
       ring({ value: total.kcal, target, status, size: 34, stroke: 5 }),
     );
@@ -332,12 +333,49 @@ function kcalHint(total, target) {
 /** Calorie target of the open day, with carry-over from the previous days */
 const currentKcalTarget = () => kcalTargets([...otherDays, current], productsById)(current);
 
-/** "Target −50 kcal for going over on previous days" — only when the carry is noticeable */
-function carryNote(carry) {
-  const value = Math.round(Math.abs(carry));
-  if (!value) return [];
-  return h('p', { class: 'summary__carry' },
-    t(carry < 0 ? 'summary.carryMinus' : 'summary.carryPlus', { value: fmt0.format(value) }));
+/** Signed whole kilocalories: "−50", "+25" */
+const signed = (value) => `${value < 0 ? '−' : '+'}${fmt0.format(Math.abs(value))}`;
+
+/**
+ * Carry-over panel: where the change of today's target came from (base → target and one
+ * line per source day) and, for past days, where this day's own deviation went.
+ */
+function carryPanel(kcal) {
+  const blocks = [];
+  if (Math.round(kcal.carry)) {
+    const tone = kcal.carry < 0 ? 'minus' : 'plus';
+    blocks.push(h('div', { class: `carry carry--${tone}` },
+      h('div', { class: 'carry__head' },
+        h('span', { class: 'carry__title' }, t('summary.carryTitle')),
+        h('b', { class: 'carry__total' }, `${signed(Math.round(kcal.carry))} ${t('unit.kcal')}`),
+      ),
+      ...kcal.sources.filter((s) => Math.round(s.share)).map((s) => h('div', { class: 'carry__row' },
+        h('span', {}, `${dateTitle(s.date)}: `,
+          t(s.deviation > 0 ? 'summary.carryOver' : 'summary.carryUnder', { value: fmt0.format(Math.abs(s.deviation)) })),
+        h('span', { class: 'carry__num' }, signed(Math.round(s.share))),
+      )),
+      h('div', { class: 'carry__row carry__sum' },
+        h('span', {}, t('macro.kcal')),
+        h('span', { class: 'carry__num' },
+          h('s', {}, fmt0.format(kcal.base)), ' → ', h('b', {}, fmt0.format(kcal.target))),
+      ),
+      kcal.capped && h('div', { class: 'carry__note' }, t('summary.carryCapped')),
+    ));
+  }
+  // A finished day: show where its own deviation goes
+  const deviation = Math.round(kcal.deviation ?? 0);
+  if (current.targets.carryOver && deviation && current.date < todayIso()) {
+    const over = deviation > 0;
+    const text = kcal.spreadDays
+      ? t(over ? 'summary.givesOver' : 'summary.givesUnder', {
+        count: kcal.spreadDays,
+        value: fmt0.format(Math.abs(deviation)),
+        share: signed(-Math.round(deviation / kcal.spreadDays)),
+      })
+      : t(over ? 'summary.weekEndOver' : 'summary.weekEndUnder', { value: fmt0.format(Math.abs(deviation)) });
+    blocks.push(h('div', { class: 'carry carry--gives' }, h('div', { class: 'carry__row' }, h('span', {}, text))));
+  }
+  return blocks;
 }
 
 /** Summary at the top of the day and compact bar at the bottom */
@@ -373,7 +411,7 @@ function renderTotals() {
         bar(sum[key], targets[key], key, status),
       );
     })),
-    ...[carryNote(kcal.carry)].flat(),
+    ...carryPanel(kcal),
     h('div', { class: 'summary__foot' },
       h('span', { class: `summary__hint ${statusClass(kcalStatus)}` }, hint || t('summary.noTargets')),
       h('button', { type: 'button', class: 'summary__goals', onclick: openTargets },

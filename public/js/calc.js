@@ -77,7 +77,14 @@ export function weekdayFromMonday(iso) {
 export const weekStart = (iso) => shiftIso(iso, -weekdayFromMonday(iso));
 
 /**
- * Calorie targets with carry-over. Returns day → { target, base, carry }.
+ * Calorie targets with carry-over. Returns day → {
+ *   target, base, carry — effective target, base target and their difference;
+ *   sources — [{ date, deviation, share }]: previous days the carry came from, their
+ *     deviation and the part given to this day (before the cap);
+ *   capped — the carry was cut by the cap;
+ *   deviation — this day's own deviation from its effective target (null without products);
+ *   spreadDays — how many following days that deviation is split across (0 on Sunday).
+ * }
  *
  * With targets.carryOver on, a day receives half of the deviation (eaten minus its own
  * effective target) of each of the two previous calendar days: 1600 eaten against 1500
@@ -101,18 +108,33 @@ export function kcalTargets(days, productsById) {
     if (memo.has(day)) return memo.get(day);
     const base = day.targets?.kcal > 0 ? day.targets.kcal : null;
     let carry = 0;
+    let capped = false;
+    const sources = [];
     if (base && day.targets.carryOver) {
       for (let k = 1; k <= CARRY_DAYS; k++) {
         const prev = byDate.get(shiftIso(day.date, -k));
         if (!prev || prev === day || !hasItems(prev) || !(prev.targets?.kcal > 0)) continue;
         if (weekStart(prev.date) !== weekStart(day.date)) continue;
-        const daysLeftInWeek = 6 - weekdayFromMonday(prev.date);
-        carry -= (eaten(prev) - resolve(prev).target) / Math.min(CARRY_DAYS, daysLeftInWeek);
+        const { deviation, spreadDays } = resolve(prev);
+        const share = -deviation / spreadDays;
+        sources.push({ date: prev.date, deviation, share });
+        carry += share;
       }
       const limit = base * CARRY_LIMIT;
-      carry = Math.max(-limit, Math.min(limit, carry));
+      const clamped = Math.max(-limit, Math.min(limit, carry));
+      capped = clamped !== carry;
+      carry = clamped;
     }
-    const result = { target: base && base + carry, base, carry };
+    const target = base && base + carry;
+    const result = {
+      target,
+      base,
+      carry,
+      sources: sources.reverse(),
+      capped,
+      deviation: base && hasItems(day) ? eaten(day) - target : null,
+      spreadDays: Math.min(CARRY_DAYS, 6 - weekdayFromMonday(day.date)),
+    };
     memo.set(day, result);
     return result;
   }

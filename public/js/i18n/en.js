@@ -60,8 +60,14 @@ export default {
   'summary.targets': 'Targets',
   'summary.setTargets': 'Set targets',
   'summary.ofKcal': 'of {value} kcal',
-  'summary.carryMinus': 'Target −{value} kcal for going over on previous days',
-  'summary.carryPlus': 'Target +{value} kcal for staying under on previous days',
+  'summary.carryTitle': 'Carried over from previous days',
+  'summary.carryOver': '{value} over',
+  'summary.carryUnder': '{value} under',
+  'summary.carryCapped': 'At most 10% of the target, the rest is dropped',
+  'summary.givesOver': { one: '{value} kcal over → {share} kcal for tomorrow', other: '{value} kcal over → {share} kcal on each of the next {count} days' },
+  'summary.givesUnder': { one: '{value} kcal under → {share} kcal for tomorrow', other: '{value} kcal under → {share} kcal on each of the next {count} days' },
+  'summary.weekEndOver': '{value} kcal over is not carried: a new week starts on Monday',
+  'summary.weekEndUnder': '{value} kcal under is not carried: a new week starts on Monday',
 
   // Targets dialog
   'targets.atMost': 'at most',
