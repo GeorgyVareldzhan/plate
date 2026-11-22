@@ -19,7 +19,7 @@
  * Values per 100 g dry / raw, approximate (from reference tables).
  * pieceGrams — weight of one piece for piece-based products, otherwise null.
  */
-export const SEED_VERSION = 22;
+export const SEED_VERSION = 23;
 
 export const SEED_RENAMES = {
   'Рис белый': 'Рис',
@@ -67,6 +67,14 @@ export const SEED_PRODUCTS = [
   p('Куриная печень', 137, 20.4, 5.9, 0.7),
   p('Куриные желудки', 114, 18.2, 4.2, 0.6),
   p('Куриные сердечки', 159, 15.8, 10.3, 0.8),
+
+  // Chicken, baked (weight of the cooked product; USDA values for roasted chicken)
+  p('Куриная грудка запечённая', 165, 31, 3.6, 0),
+  p('Куриное бедро запечённое без кожи', 209, 25.9, 10.9, 0),
+  p('Куриное бедро запечённое с кожей', 229, 23.3, 14.7, 0),
+  p('Куриная голень запечённая', 216, 27, 11.2, 0),
+  p('Куриные крылья запечённые', 290, 26.9, 19.5, 0),
+  p('Курица целиком запечённая', 239, 27.3, 13.6, 0),
 
   // Turkey, duck (raw)
   p('Индейка, филе', 114, 23.7, 1.5, 0),
