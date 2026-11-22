@@ -19,7 +19,7 @@
  * Values per 100 g dry / raw, approximate (from reference tables).
  * pieceGrams — weight of one piece for piece-based products, otherwise null.
  */
-export const SEED_VERSION = 25;
+export const SEED_VERSION = 26;
 
 export const SEED_RENAMES = {
   'Рис белый': 'Рис',
@@ -146,7 +146,6 @@ export const SEED_PRODUCTS = [
   p('Судак отварной', 97, 21.3, 1.3, 0),
   p('Щука отварная', 97, 21.3, 1.3, 0),
   p('Горбуша отварная', 169, 23.2, 8.4, 0),
-  p('Сёмга отварная', 187, 22, 11, 0),
 
   // Seafood
   p('Креветки', 95, 20, 1.5, 0),
