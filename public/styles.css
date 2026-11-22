@@ -12,6 +12,7 @@
   --label-3: rgba(60, 60, 67, .3);
   --fill: rgba(118, 118, 128, .12);
   --fill-2: rgba(118, 118, 128, .2);
+  --row-active: #e5e5ea;   /* подсветка нажатой строки — непрозрачная, чтобы под ней ничего не просвечивало */
   --sep: rgba(60, 60, 67, .29);
   --tint: #248a3d;          /* акцент приложения: доступный зелёный для текста */
   --tint-fill: #34c759;     /* заливки акцентом */
@@ -51,6 +52,7 @@
     --label-3: rgba(235, 235, 245, .3);
     --fill: rgba(118, 118, 128, .24);
     --fill-2: rgba(118, 118, 128, .32);
+    --row-active: #2c2c2e;
     --sep: rgba(84, 84, 88, .6);
     --tint: #30d158;
     --tint-fill: #30d158;
@@ -105,7 +107,7 @@ input { font: inherit; letter-spacing: inherit; }
   max-width: 600px;
   margin: 0 auto;
   padding:
-    env(safe-area-inset-top)
+    calc(env(safe-area-inset-top) + 16px) /* отступ от верха экрана (под вырезом iPhone) */
     calc(env(safe-area-inset-right) + var(--gutter))
     calc(env(safe-area-inset-bottom) + var(--tabbar-h) + 32px)
     calc(env(safe-area-inset-left) + var(--gutter));
@@ -123,7 +125,7 @@ body[data-view="day"] .app { padding-bottom: calc(env(safe-area-inset-bottom) + 
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 0 0 8px; /* воздух сверху; до заголовка — margin-top у .large-title */
+  padding-left: 10px; /* до заголовка экрана — margin-top у .large-title */
 }
 .brand__logo {
   display: block;
@@ -288,7 +290,7 @@ body[data-view="day"] .app { padding-bottom: calc(env(safe-area-inset-bottom) + 
   text-align: left;
   cursor: pointer;
 }
-button.row:active, .row--tap:active { background: var(--fill); }
+button.row:active, .row--tap:active { background: var(--row-active); }
 .row__body { flex: 1; min-width: 0; display: grid; gap: 1px; }
 .row__title {
   overflow: hidden;
@@ -336,6 +338,7 @@ button.row:active, .row--tap:active { background: var(--fill); }
 /* ---------- Свайп для удаления ---------- */
 
 .swipe { overflow: hidden; }
+.swipe:not(.is-revealed) .swipe__actions { visibility: hidden; }
 .swipe__actions {
   position: absolute;
   inset: 0 0 0 auto;

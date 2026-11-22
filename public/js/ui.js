@@ -106,9 +106,17 @@ export function swipeRow(content, onDelete, { label = 'Удалить', classNam
   let horizontal = false;
   let pointerId = null;
 
+  // Кнопка «Удалить» видна, только пока строка сдвинута, — иначе она может просвечивать при нажатии
+  const reveal = (on) => row.classList.toggle('is-revealed', on);
+  content.addEventListener('transitionend', () => {
+    if (!content.style.transform) reveal(false);
+  });
+
   const move = (x, animate) => {
+    if (x) reveal(true);
     content.style.transition = animate ? 'transform .28s cubic-bezier(.2,.8,.2,1)' : 'none';
     content.style.transform = x ? `translateX(${x}px)` : '';
+    if (!x && !animate) reveal(false);
   };
   const api = {
     el: row,

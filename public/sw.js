@@ -2,7 +2,7 @@
 
 // При изменении любого файла приложения увеличьте версию — старый кэш удалится
 // Открытое приложение само перезагрузится, когда новая версия установится (см. js/update.js)
-const CACHE = 'calc-v48';
+const CACHE = 'calc-v56';
 
 const ASSETS = [
   './',
@@ -20,6 +20,7 @@ const ASSETS = [
   'js/picker.js',
   'js/products.js',
   'js/seed.js',
+  'js/share.js',
   'js/ui.js',
   'js/update.js',
   'manifest.webmanifest',

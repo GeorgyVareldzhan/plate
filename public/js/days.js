@@ -9,6 +9,7 @@ import { icon, ring, bar, swipeRow, actionSheet } from './ui.js';
 import { itemRow, addRow, newItem } from './itemrow.js';
 import { openPicker } from './picker.js';
 import { loadDishes, dishRow } from './dishes.js';
+import { renderDayImage, canvasToFile, shareFile } from './share.js';
 import { go } from './nav.js';
 
 const MAX_MEALS = 10;
@@ -229,10 +230,19 @@ function renderTitle() {
 
 function openDayActions() {
   actionSheet(null, [
+    { label: 'Поделиться днём', onClick: shareDay },
     { label: 'Цели на день', onClick: openTargets },
     { label: 'Копировать на сегодня', onClick: copyDay },
     { label: 'Удалить день', danger: true, onClick: () => deleteDay(current) },
   ]);
+}
+
+/** Картинка с меню дня в системное меню «Поделиться» (синхронно — Safari требует жест пользователя) */
+function shareDay() {
+  const date = capitalize(fmtFull.format(parseIso(current.date)));
+  const canvas = renderDayImage({ day: current, productsById, date });
+  const file = canvasToFile(canvas, `plate-${current.date}.png`);
+  shareFile(file, `Plate · ${date}`);
 }
 
 function openTargets() {
