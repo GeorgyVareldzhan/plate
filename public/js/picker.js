@@ -4,6 +4,7 @@
  */
 import { db } from './db.js';
 import { $, h } from './dom.js';
+import { t } from './i18n.js';
 import { loadProducts, filterProducts, matchesQuery, productRow, renderGrouped, openProductDialog } from './products.js';
 
 const RECENT_LIMIT = 8;
@@ -73,7 +74,7 @@ function render() {
   const parts = [];
   if (dishes.length) {
     parts.push(
-      h('p', { class: 'group-title' }, 'Блюда'),
+      h('p', { class: 'group-title' }, t('picker.dishes')),
       h('ul', { class: 'group group--icons' }, ...dishes.map((d) => options.dishRow(d, () => pickDish(d)))),
     );
   }
@@ -81,12 +82,12 @@ function render() {
     const box = h('div');
     renderGrouped(box, products, (p, section) => productRow(p, () => pickProduct(p), { section }), {
       searching: Boolean(query),
-      sections: [['Недавние', recent]],
+      sections: [[t('picker.recent'), recent]],
     });
     parts.push(box);
   }
   if (!parts.length) {
-    parts.push(h('p', { class: 'empty-note' }, `Ничего не найдено. Нажмите «Новый», чтобы создать «${query}».`));
+    parts.push(h('p', { class: 'empty-note' }, t('picker.notFound', { query })));
   }
   listEl.replaceChildren(...parts);
 }

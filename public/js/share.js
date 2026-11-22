@@ -6,6 +6,7 @@
  */
 import { portion, sumNutrition, targetStatus } from './calc.js';
 import { fmt0, fmt1 } from './dom.js';
+import { t, macrosLine } from './i18n.js';
 import { productIcon, renderIcon } from './icons.js';
 
 // Preload the logo so it is ready by the time of the tap
@@ -62,9 +63,9 @@ function wrap2(ctx, text, maxWidth) {
 
 /** Quantity in the form convenient for measuring: "3 pcs · 165 g" or "250 g" */
 function amountText(item, product) {
-  const grams = `${fmt0.format(item.grams)} г`;
+  const grams = `${fmt0.format(item.grams)} ${t('unit.g')}`;
   if (item.unit === 'pcs' && product?.pieceGrams > 0) {
-    return `${fmt1.format(item.grams / product.pieceGrams)} шт · ${grams}`;
+    return `${fmt1.format(item.grams / product.pieceGrams)} ${t('unit.pcs')} · ${grams}`;
   }
   return grams;
 }
@@ -96,7 +97,7 @@ export function renderDayImage({ day, productsById, date }) {
       const aw = measure.measureText(amount).width;
       measure.font = font(38, 500);
       const textW = CARD_W - 128 - 36 - aw - 24;
-      const lines = wrap2(measure, product?.name ?? 'Продукт удалён', textW);
+      const lines = wrap2(measure, product?.name ?? t('product.deleted'), textW);
       return { item, product, amount, aw, textW, lines, h: ROW_H + (lines.length - 1) * LINE2_H };
     });
     meal.h = meal.rows.reduce((sum, r) => sum + r.h, 0);
@@ -131,22 +132,22 @@ export function renderDayImage({ day, productsById, date }) {
   y = HEADER_H;
 
   // --- Day total
-  const t = sumNutrition(day.meals.flatMap((m) => m.items), productsById);
+  const sum = sumNutrition(day.meals.flatMap((m) => m.items), productsById);
   const targets = day.targets ?? {};
   roundRect(ctx, CARD_X, y, CARD_W, SUMMARY_H - 40, 28); // 240
   ctx.fillStyle = C.card;
   ctx.fill();
 
-  ctx.fillStyle = statusColor(targetStatus('kcal', t.kcal, targets.kcal));
+  ctx.fillStyle = statusColor(targetStatus('kcal', sum.kcal, targets.kcal));
   ctx.font = font(76, 700);
-  const kcalText = fmt0.format(t.kcal);
+  const kcalText = fmt0.format(sum.kcal);
   ctx.fillText(kcalText, CARD_X + 40, y + 104);
   const kcalW = ctx.measureText(kcalText).width;
   ctx.fillStyle = C.muted;
   ctx.font = font(36, 400);
-  ctx.fillText(targets.kcal ? ` из ${fmt0.format(targets.kcal)} ккал` : ' ккал', CARD_X + 40 + kcalW, y + 104);
+  ctx.fillText(` ${targets.kcal ? t('summary.ofKcal', { value: fmt0.format(targets.kcal) }) : t('unit.kcal')}`, CARD_X + 40 + kcalW, y + 104);
 
-  const macros = [['protein', 'Белки'], ['fat', 'Жиры'], ['carbs', 'Углеводы']];
+  const macros = ['protein', 'fat', 'carbs'].map((key) => [key, t(`macro.${key}`)]);
   const colW = (CARD_W - 80) / 3;
   macros.forEach(([key, label], i) => {
     const x = CARD_X + 40 + i * colW;
@@ -157,15 +158,15 @@ export function renderDayImage({ day, productsById, date }) {
     ctx.fillStyle = C.muted;
     ctx.font = font(28, 500);
     ctx.fillText(label, x + 28, y + 170);
-    ctx.fillStyle = statusColor(targetStatus(key, t[key], targets[key]));
+    ctx.fillStyle = statusColor(targetStatus(key, sum[key], targets[key]));
     ctx.font = font(36, 700);
-    const v = fmt0.format(t[key]);
+    const v = fmt0.format(sum[key]);
     ctx.fillText(v, x, y + 216);
     if (targets[key]) {
       const vw = ctx.measureText(v).width;
       ctx.fillStyle = C.muted;
       ctx.font = font(28, 400);
-      ctx.fillText(` / ${fmt0.format(targets[key])} г`, x + vw, y + 216);
+      ctx.fillText(` / ${fmt0.format(targets[key])} ${t('unit.g')}`, x + vw, y + 216);
     }
   });
   y += SUMMARY_H;
@@ -174,7 +175,7 @@ export function renderDayImage({ day, productsById, date }) {
   if (!meals.length) {
     ctx.fillStyle = C.muted;
     ctx.font = font(36, 400);
-    ctx.fillText('В этом дне пока нет продуктов', CARD_X + 8, y + 60);
+    ctx.fillText(t('share.empty'), CARD_X + 8, y + 60);
     y += 160;
   }
 
@@ -182,10 +183,10 @@ export function renderDayImage({ day, productsById, date }) {
     const mt = sumNutrition(meal.items, productsById);
     ctx.fillStyle = C.text;
     ctx.font = font(44, 700);
-    ctx.fillText(`Приём ${meal.index + 1}`, CARD_X + 8, y + 52);
+    ctx.fillText(t('meal.title', { n: meal.index + 1 }), CARD_X + 8, y + 52);
     ctx.fillStyle = C.muted;
     ctx.font = font(32, 400);
-    const mk = `${fmt0.format(mt.kcal)} ккал`;
+    const mk = `${fmt0.format(mt.kcal)} ${t('unit.kcal')}`;
     ctx.fillText(mk, CARD_X + CARD_W - 8 - ctx.measureText(mk).width, y + 52);
     y += MEAL_HEAD_H;
 
@@ -225,7 +226,7 @@ export function renderDayImage({ day, productsById, date }) {
         ctx.fillStyle = C.muted;
         ctx.font = font(28, 400);
         const p = portion(product, item.grams);
-        ctx.fillText(fit(ctx, `${fmt0.format(p.kcal)} ккал · Б ${fmt1.format(p.protein)} · Ж ${fmt1.format(p.fat)} · У ${fmt1.format(p.carbs)}`, textW), textX, ry + 94 + extra);
+        ctx.fillText(fit(ctx, `${fmt0.format(p.kcal)} ${t('unit.kcal')} · ${macrosLine(p)}`, textW), textX, ry + 94 + extra);
       }
       ry += h;
     });
@@ -236,7 +237,7 @@ export function renderDayImage({ day, productsById, date }) {
   ctx.fillStyle = C.muted;
   ctx.font = font(28, 400);
   ctx.textAlign = 'center';
-  ctx.fillText('Plate — граммовки под калораж', W / 2, H - 48);
+  ctx.fillText(t('share.footer'), W / 2, H - 48);
   ctx.textAlign = 'left';
 
   return canvas;

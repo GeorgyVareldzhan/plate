@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Plate</title>
-  <meta name="description" content="Подбор граммовок под дневной калораж и БЖУ">
+  <meta name="description" content="Portion sizes in grams for your daily calorie and macro targets">
   <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 
@@ -21,6 +21,10 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!--
+    UI text is English by default and translated at startup (js/i18n.js):
+    data-i18n — text content, data-i18n-aria — aria-label, data-i18n-placeholder — placeholder.
+  -->
   <main class="app">
 
     <!-- ===== Day list ===== -->
@@ -30,18 +34,18 @@
           <img class="brand__logo" src="icons/logo.svg" alt="" width="30" height="30">
           <span class="brand__name">Plate</span>
         </div>
-        <button type="button" id="days-add" class="nav-icon" aria-label="Новый день">
+        <button type="button" id="days-add" class="nav-icon" aria-label="New day" data-i18n-aria="days.new">
           <svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
         </button>
       </header>
-      <h1 class="large-title">Дни</h1>
+      <h1 class="large-title" data-i18n="days.title">Days</h1>
 
       <ul id="days-list" class="group"></ul>
       <div id="days-empty" class="empty-state" hidden>
         <img class="empty-state__logo" src="icons/logo.svg" alt="" width="96" height="96">
-        <p class="empty-state__title">Добро пожаловать в Plate</p>
-        <p class="empty-state__text">Создайте день, задайте калораж и подбирайте граммовки.</p>
-        <button type="button" id="days-empty-add" class="btn btn--filled">Создать день</button>
+        <p class="empty-state__title" data-i18n="days.welcome.title">Welcome to Plate</p>
+        <p class="empty-state__text" data-i18n="days.welcome.text">Create a day, set your calorie target and fine-tune portion sizes.</p>
+        <button type="button" id="days-empty-add" class="btn btn--filled" data-i18n="days.welcome.button">Create a day</button>
       </div>
     </section>
 
@@ -50,18 +54,18 @@
       <header class="navbar">
         <button type="button" id="day-back" class="nav-back">
           <svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
-          <span>Дни</span>
+          <span data-i18n="days.title">Days</span>
         </button>
-        <button type="button" id="day-more" class="nav-icon" aria-label="Действия с днём">
+        <button type="button" id="day-more" class="nav-icon" aria-label="Day actions" data-i18n-aria="day.actions">
           <svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h.01M12 12h.01M19 12h.01"/></svg>
         </button>
       </header>
 
       <!-- Tapping the title opens the date picker: a transparent date input sits on top -->
       <div class="date-title">
-        <h1 id="day-title" class="large-title">Сегодня</h1>
+        <h1 id="day-title" class="large-title" data-i18n="day.today">Today</h1>
         <p id="day-subtitle" class="date-title__sub"></p>
-        <input type="date" id="day-date" class="date-title__input" aria-label="Дата дня">
+        <input type="date" id="day-date" class="date-title__input" aria-label="Day date" data-i18n-aria="day.date">
       </div>
 
       <section id="day-summary" class="card summary" aria-live="polite"></section>
@@ -70,7 +74,7 @@
 
       <button type="button" id="day-add-meal" class="btn btn--tinted btn--block">
         <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-        Добавить приём
+        <span data-i18n="day.addMeal">Add meal</span>
       </button>
 
       <!-- Compact totals: appear when the summary scrolls off screen -->
@@ -81,39 +85,41 @@
     <section id="view-products" class="view" hidden>
       <header class="navbar">
         <span></span>
-        <button type="button" id="products-add" class="nav-icon" aria-label="Добавить продукт">
+        <button type="button" id="products-add" class="nav-icon" aria-label="Add product" data-i18n-aria="products.add">
           <svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
         </button>
       </header>
-      <h1 class="large-title">Продукты</h1>
+      <h1 class="large-title" data-i18n="products.title">Products</h1>
 
       <label class="search">
         <svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4"/></svg>
-        <input type="search" id="products-search" placeholder="Поиск" autocomplete="off" enterkeyhint="search">
+        <input type="search" id="products-search" placeholder="Search" data-i18n-placeholder="products.search" autocomplete="off" enterkeyhint="search">
       </label>
       <div id="products-list"></div>
       <p id="products-empty" class="empty-note" hidden></p>
-      <p class="footnote footnote--center">Значения на 100 г в сухом / сыром виде</p>
+      <p class="footnote footnote--center" data-i18n="products.note">Values per 100 g, dry / raw weight</p>
+      <!-- Language switch: deliberately low-key, most users never need it -->
+      <button type="button" id="language-btn" class="language-link"></button>
     </section>
 
     <!-- ===== Dishes ===== -->
     <section id="view-dishes" class="view" hidden>
       <header class="navbar">
         <span></span>
-        <button type="button" id="dishes-add" class="nav-icon" aria-label="Новое блюдо">
+        <button type="button" id="dishes-add" class="nav-icon" aria-label="New dish" data-i18n-aria="dishes.new">
           <svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
         </button>
       </header>
-      <h1 class="large-title">Блюда</h1>
+      <h1 class="large-title" data-i18n="dishes.title">Dishes</h1>
 
       <ul id="dishes-list" class="group group--icons"></ul>
       <div id="dishes-empty" class="empty-state" hidden>
         <div class="empty-state__icon" aria-hidden="true">🍳</div>
-        <p class="empty-state__title">Блюд пока нет</p>
-        <p class="empty-state__text">Соберите блюдо из продуктов, чтобы добавлять его в приём одним нажатием.</p>
-        <button type="button" id="dishes-empty-add" class="btn btn--filled">Создать блюдо</button>
+        <p class="empty-state__title" data-i18n="dishes.empty.title">No dishes yet</p>
+        <p class="empty-state__text" data-i18n="dishes.empty.text">Build a dish from products to add it to a meal in one tap.</p>
+        <button type="button" id="dishes-empty-add" class="btn btn--filled" data-i18n="dishes.empty.button">Create a dish</button>
       </div>
-      <p class="footnote">При добавлении блюда в приём его ингредиенты добавляются по отдельности — их граммы можно поправить, само блюдо не изменится.</p>
+      <p class="footnote" data-i18n="dishes.note">When you add a dish to a meal, its ingredients are added separately: you can adjust their grams without changing the dish itself.</p>
     </section>
 
     <!-- ===== Dish ===== -->
@@ -121,34 +127,34 @@
       <header class="navbar">
         <button type="button" id="dish-back" class="nav-back">
           <svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
-          <span>Блюда</span>
+          <span data-i18n="dishes.title">Dishes</span>
         </button>
-        <button type="button" id="dish-more" class="nav-icon" aria-label="Действия с блюдом">
+        <button type="button" id="dish-more" class="nav-icon" aria-label="Dish actions" data-i18n-aria="dish.actions">
           <svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h.01M12 12h.01M19 12h.01"/></svg>
         </button>
       </header>
 
-      <input id="dish-name" class="title-input" type="text" maxlength="60" placeholder="Название блюда" autocomplete="off" enterkeyhint="done" aria-label="Название блюда">
+      <input id="dish-name" class="title-input" type="text" maxlength="60" placeholder="Dish name" data-i18n-placeholder="dish.name" aria-label="Dish name" data-i18n-aria="dish.name" autocomplete="off" enterkeyhint="done">
 
       <section id="dish-summary" class="card dish-summary" aria-live="polite"></section>
 
-      <p class="group-title">Ингредиенты</p>
+      <p class="group-title" data-i18n="dish.ingredients">Ingredients</p>
       <ul id="dish-items" class="group group--icons"></ul>
     </section>
   </main>
 
-  <nav class="tabbar" aria-label="Разделы">
+  <nav class="tabbar" aria-label="Sections" data-i18n-aria="tabs.label">
     <button type="button" data-tab="days">
       <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM4 10h16M9 3v4M15 3v4"/></svg>
-      <span>Дни</span>
+      <span data-i18n="days.title">Days</span>
     </button>
     <button type="button" data-tab="dishes">
       <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11h16v3a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6v-3zM2 11h20M8 7.5c0-1.4 1.8-2.5 4-2.5s4 1.1 4 2.5"/></svg>
-      <span>Блюда</span>
+      <span data-i18n="dishes.title">Dishes</span>
     </button>
     <button type="button" data-tab="products">
       <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c-1.5-1-5-1.5-6 2s1 9 3.5 10c1 .4 1.7-.3 2.5-.3s1.5.7 2.5.3C17 19 19 13.5 18 10s-4.5-3-6-2Z"/><path d="M12 8c0-2 .8-3.5 2.5-4.5"/></svg>
-      <span>Продукты</span>
+      <span data-i18n="products.title">Products</span>
     </button>
   </nav>
 
@@ -157,29 +163,29 @@
     <form id="targets-form" novalidate>
       <div class="sheet__head">
         <span></span>
-        <strong>Цели на день</strong>
-        <button type="submit" class="link link--bold">Готово</button>
+        <strong data-i18n="day.targets">Daily targets</strong>
+        <button type="submit" class="link link--bold" data-i18n="action.done">Done</button>
       </div>
       <div class="sheet__body">
         <ul class="group group--form">
           <li class="form-row">
-            <span class="form-row__label"><span class="dot dot--kcal"></span>Калории <small>не более</small></span>
-            <span class="form-row__input"><input name="kcal" type="text" inputmode="numeric" autocomplete="off" placeholder="—"><em>ккал</em></span>
+            <span class="form-row__label"><span class="dot dot--kcal"></span><span data-i18n="macro.kcal">Calories</span> <small data-i18n="targets.atMost">at most</small></span>
+            <span class="form-row__input"><input name="kcal" type="text" inputmode="numeric" autocomplete="off" placeholder="—"><em data-i18n="unit.kcal">kcal</em></span>
           </li>
           <li class="form-row">
-            <span class="form-row__label"><span class="dot dot--protein"></span>Белки <small>не менее</small></span>
-            <span class="form-row__input"><input name="protein" type="text" inputmode="numeric" autocomplete="off" placeholder="—"><em>г</em></span>
+            <span class="form-row__label"><span class="dot dot--protein"></span><span data-i18n="macro.protein">Protein</span> <small data-i18n="targets.atLeast">at least</small></span>
+            <span class="form-row__input"><input name="protein" type="text" inputmode="numeric" autocomplete="off" placeholder="—"><em data-i18n="unit.g">g</em></span>
           </li>
           <li class="form-row">
-            <span class="form-row__label"><span class="dot dot--fat"></span>Жиры <small>не более</small></span>
-            <span class="form-row__input"><input name="fat" type="text" inputmode="numeric" autocomplete="off" placeholder="—"><em>г</em></span>
+            <span class="form-row__label"><span class="dot dot--fat"></span><span data-i18n="macro.fat">Fat</span> <small data-i18n="targets.atMost">at most</small></span>
+            <span class="form-row__input"><input name="fat" type="text" inputmode="numeric" autocomplete="off" placeholder="—"><em data-i18n="unit.g">g</em></span>
           </li>
           <li class="form-row">
-            <span class="form-row__label"><span class="dot dot--carbs"></span>Углеводы <small>не более</small></span>
-            <span class="form-row__input"><input name="carbs" type="text" inputmode="numeric" autocomplete="off" placeholder="—"><em>г</em></span>
+            <span class="form-row__label"><span class="dot dot--carbs"></span><span data-i18n="macro.carbs">Carbs</span> <small data-i18n="targets.atMost">at most</small></span>
+            <span class="form-row__input"><input name="carbs" type="text" inputmode="numeric" autocomplete="off" placeholder="—"><em data-i18n="unit.g">g</em></span>
           </li>
         </ul>
-        <p class="footnote">Погрешность 3 %. Пустое поле — показатель считается, но не подсвечивается. Новый день берёт цели из предыдущего.</p>
+        <p class="footnote" data-i18n="targets.note">3% tolerance. Leave a field empty to track the value without highlighting. A new day takes its targets from the previous one.</p>
       </div>
     </form>
   </dialog>
@@ -188,55 +194,55 @@
   <dialog id="product-dialog" autofocus tabindex="-1" class="sheet">
     <form id="product-form" novalidate>
       <div class="sheet__head">
-        <button type="button" class="link" data-close>Отмена</button>
-        <strong id="product-title">Новый продукт</strong>
-        <button type="submit" class="link link--bold">Готово</button>
+        <button type="button" class="link" data-close data-i18n="action.cancel">Cancel</button>
+        <strong id="product-title" data-i18n="product.new">New product</strong>
+        <button type="submit" class="link link--bold" data-i18n="action.done">Done</button>
       </div>
 
       <div class="sheet__body">
         <div class="product-hero">
-          <button type="button" id="product-icon-btn" class="product-hero__icon" aria-label="Выбрать иконку" aria-expanded="false"></button>
-          <span class="product-hero__hint">Нажмите, чтобы сменить иконку</span>
+          <button type="button" id="product-icon-btn" class="product-hero__icon" aria-label="Choose icon" data-i18n-aria="product.chooseIcon" aria-expanded="false"></button>
+          <span class="product-hero__hint" data-i18n="product.iconHint">Tap to change the icon</span>
         </div>
-        <div id="product-icons" class="icon-grid" role="listbox" aria-label="Иконки" hidden></div>
+        <div id="product-icons" class="icon-grid" role="listbox" aria-label="Icons" data-i18n-aria="product.icons" hidden></div>
 
         <ul class="group group--form">
           <li class="form-row">
-            <input name="name" class="form-row__full" type="text" maxlength="80" autocomplete="off" placeholder="Название" aria-label="Название">
+            <input name="name" class="form-row__full" type="text" maxlength="80" autocomplete="off" placeholder="Name" data-i18n-placeholder="product.name" aria-label="Name" data-i18n-aria="product.name">
           </li>
         </ul>
 
-        <p class="group-title">На 100 г в сухом / сыром виде</p>
+        <p class="group-title" data-i18n="product.per100">Per 100 g, dry / raw weight</p>
         <ul class="group group--form">
           <li class="form-row">
-            <span class="form-row__label">Калории</span>
-            <span class="form-row__input"><input name="kcal" type="text" inputmode="decimal" autocomplete="off"><em>ккал</em></span>
+            <span class="form-row__label" data-i18n="macro.kcal">Calories</span>
+            <span class="form-row__input"><input name="kcal" type="text" inputmode="decimal" autocomplete="off"><em data-i18n="unit.kcal">kcal</em></span>
           </li>
           <li class="form-row">
-            <span class="form-row__label"><span class="dot dot--protein"></span>Белки</span>
-            <span class="form-row__input"><input name="protein" type="text" inputmode="decimal" autocomplete="off" placeholder="0"><em>г</em></span>
+            <span class="form-row__label"><span class="dot dot--protein"></span><span data-i18n="macro.protein">Protein</span></span>
+            <span class="form-row__input"><input name="protein" type="text" inputmode="decimal" autocomplete="off" placeholder="0"><em data-i18n="unit.g">g</em></span>
           </li>
           <li class="form-row">
-            <span class="form-row__label"><span class="dot dot--fat"></span>Жиры</span>
-            <span class="form-row__input"><input name="fat" type="text" inputmode="decimal" autocomplete="off" placeholder="0"><em>г</em></span>
+            <span class="form-row__label"><span class="dot dot--fat"></span><span data-i18n="macro.fat">Fat</span></span>
+            <span class="form-row__input"><input name="fat" type="text" inputmode="decimal" autocomplete="off" placeholder="0"><em data-i18n="unit.g">g</em></span>
           </li>
           <li class="form-row">
-            <span class="form-row__label"><span class="dot dot--carbs"></span>Углеводы</span>
-            <span class="form-row__input"><input name="carbs" type="text" inputmode="decimal" autocomplete="off" placeholder="0"><em>г</em></span>
+            <span class="form-row__label"><span class="dot dot--carbs"></span><span data-i18n="macro.carbs">Carbs</span></span>
+            <span class="form-row__input"><input name="carbs" type="text" inputmode="decimal" autocomplete="off" placeholder="0"><em data-i18n="unit.g">g</em></span>
           </li>
         </ul>
-        <p class="footnote">Если не указать калории, они посчитаются по БЖУ.</p>
+        <p class="footnote" data-i18n="product.kcalNote">Leave calories empty to calculate them from protein, fat and carbs.</p>
 
         <ul class="group group--form">
           <li class="form-row">
-            <span class="form-row__label">Вес 1 штуки</span>
-            <span class="form-row__input"><input name="pieceGrams" type="text" inputmode="decimal" autocomplete="off" placeholder="нет"><em>г</em></span>
+            <span class="form-row__label" data-i18n="product.pieceWeight">Weight of 1 piece</span>
+            <span class="form-row__input"><input name="pieceGrams" type="text" inputmode="decimal" autocomplete="off" placeholder="none" data-i18n-placeholder="product.pieceNone"><em data-i18n="unit.g">g</em></span>
           </li>
         </ul>
-        <p class="footnote">Для поштучных продуктов: яйцо, батончик, бутылка. Тогда в дне можно вводить штуками.</p>
+        <p class="footnote" data-i18n="product.pieceNote">For products counted in pieces: an egg, a bar, a bottle. Then you can enter them in pieces in a day.</p>
 
         <p id="product-error" class="error" role="alert" hidden></p>
-        <button type="button" id="product-delete" class="btn btn--danger btn--block" hidden>Удалить продукт</button>
+        <button type="button" id="product-delete" class="btn btn--danger btn--block" hidden data-i18n="product.delete">Delete product</button>
       </div>
     </form>
   </dialog>
@@ -244,14 +250,14 @@
   <!-- Product picker for a meal -->
   <dialog id="picker" autofocus tabindex="-1" class="sheet sheet--tall">
     <div class="sheet__head">
-      <button type="button" class="link" data-close>Отмена</button>
-      <strong id="picker-title">Добавить продукт</strong>
-      <button type="button" id="picker-new" class="link">Новый</button>
+      <button type="button" class="link" data-close data-i18n="action.cancel">Cancel</button>
+      <strong id="picker-title" data-i18n="meal.addProduct">Add product</strong>
+      <button type="button" id="picker-new" class="link" data-i18n="action.new">New</button>
     </div>
     <div class="sheet__body">
       <label class="search search--sheet">
         <svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4"/></svg>
-        <input type="search" id="picker-search" placeholder="Поиск продукта" autocomplete="off" enterkeyhint="search">
+        <input type="search" id="picker-search" placeholder="Search products" data-i18n-placeholder="picker.search" autocomplete="off" enterkeyhint="search">
       </label>
       <div id="picker-list"></div>
     </div>

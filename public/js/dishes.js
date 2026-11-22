@@ -6,6 +6,7 @@
 import { db } from './db.js';
 import { sumNutrition } from './calc.js';
 import { $, h, fmt0, fmt1, debounce } from './dom.js';
+import { t } from './i18n.js';
 import { loadProducts } from './products.js';
 import { iconTile } from './icons.js';
 import { swipeRow, actionSheet } from './ui.js';
@@ -48,17 +49,17 @@ export async function loadDishes() {
   return dishes.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ru'));
 }
 
-const dishName = (dish) => dish.name.trim() || 'Без названия';
+const dishName = (dish) => dish.name.trim() || t('dish.untitled');
 
 /** Ingredients on one line: "Chicken egg 3 pcs · Butter 5 g" */
 function compositionLine(dish, byId) {
-  if (!dish.items.length) return 'Пусто';
+  if (!dish.items.length) return t('dish.empty');
   return dish.items.map((i) => {
     const p = byId.get(i.productId);
     if (!p) return null;
     const amount = i.unit === 'pcs' && p.pieceGrams
-      ? `${fmt1.format(i.grams / p.pieceGrams)} шт`
-      : `${fmt0.format(i.grams)} г`;
+      ? `${fmt1.format(i.grams / p.pieceGrams)} ${t('unit.pcs')}`
+      : `${fmt0.format(i.grams)} ${t('unit.g')}`;
     return `${p.name} ${amount}`;
   }).filter(Boolean).join(' · ');
 }
@@ -73,7 +74,7 @@ export function dishRow(dish, byId, onClick, { chevron = false } = {}) {
         h('span', { class: 'row__title' }, dishName(dish)),
         h('span', { class: 'row__sub' }, compositionLine(dish, byId)),
       ),
-      h('span', { class: 'row__value' }, `${fmt0.format(total.kcal)} ккал`),
+      h('span', { class: 'row__value' }, `${fmt0.format(total.kcal)} ${t('unit.kcal')}`),
       chevron ? h('span', { class: 'row__chevron', 'aria-hidden': 'true' }, '›') : null,
     ),
   );
@@ -87,7 +88,7 @@ export function initDishes() {
     go('dishes');
   });
   $('#dish-more').addEventListener('click', () => actionSheet(null, [
-    { label: 'Удалить блюдо', danger: true, onClick: () => deleteDish(current) },
+    { label: t('dish.delete'), danger: true, onClick: () => deleteDish(current) },
   ]));
   nameEl.addEventListener('input', () => {
     current.name = nameEl.value;
@@ -121,7 +122,7 @@ async function createDish() {
 }
 
 async function deleteDish(dish) {
-  if (!confirm(`Удалить блюдо «${dishName(dish)}»? В уже составленных днях продукты останутся.`)) return;
+  if (!confirm(t('dish.deleteConfirm', { name: dishName(dish) }))) return;
   if (current?.id === dish.id) {
     saveSoon.cancel();
     current = null;
@@ -161,8 +162,8 @@ function renderItems() {
         changed();
       },
     })),
-    addRow('Добавить ингредиент', () => openPicker({
-      title: 'Ингредиент',
+    addRow(t('dish.addIngredient'), () => openPicker({
+      title: t('picker.ingredient'),
       onProduct: async (product) => {
         await refreshProducts();
         current.items.push(newItem(product));
@@ -174,18 +175,18 @@ function renderItems() {
 }
 
 function renderSummary() {
-  const t = sumNutrition(current.items, productsById);
-  const grams = current.items.reduce((sum, i) => sum + i.grams, 0);
+  const sum = sumNutrition(current.items, productsById);
+  const grams = current.items.reduce((total, i) => total + i.grams, 0);
   summaryEl.replaceChildren(
     h('div', { class: 'dish-summary__main' },
-      h('span', { class: 'dish-summary__kcal' }, fmt0.format(t.kcal)),
-      h('span', { class: 'muted' }, ` ккал · ${fmt0.format(grams)} г`),
+      h('span', { class: 'dish-summary__kcal' }, fmt0.format(sum.kcal)),
+      h('span', { class: 'muted' }, ` ${t('unit.kcal')} · ${fmt0.format(grams)} ${t('unit.g')}`),
     ),
     h('div', { class: 'dish-summary__macros' },
-      ...[['protein', 'Белки'], ['fat', 'Жиры'], ['carbs', 'Углеводы']].map(([key, label]) =>
+      ...['protein', 'fat', 'carbs'].map((key) =>
         h('div', { class: `dish-macro dish-macro--${key}` },
-          h('b', {}, fmt1.format(t[key])),
-          h('span', {}, `${label}, г`),
+          h('b', {}, fmt1.format(sum[key])),
+          h('span', {}, t('dish.macroUnit', { name: t(`macro.${key}`) })),
         )),
     ),
   );

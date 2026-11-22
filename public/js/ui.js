@@ -1,6 +1,7 @@
 /** Shared UI elements: SVG icons, progress ring, swipe to delete */
 import { h } from './dom.js';
 import { statusClass } from './calc.js';
+import { t } from './i18n.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -93,7 +94,7 @@ document.addEventListener('pointerdown', (e) => {
  * Swipeable list row: returns an <li> with content inside and a "Delete" button beneath it.
  * A swipe doesn't start on inputs or controls (stepper, segmented control).
  */
-export function swipeRow(content, onDelete, { label = 'Удалить', className = '' } = {}) {
+export function swipeRow(content, onDelete, { label = t('action.delete'), className = '' } = {}) {
   const action = h('button', { type: 'button', class: 'swipe__delete', onclick: () => onDelete() }, label);
   const row = h('li', { class: `swipe ${className}`.trim() }, h('div', { class: 'swipe__actions' }, action), content);
   content.classList.add('swipe__content');
@@ -199,7 +200,7 @@ export function actionSheet(title, actions) {
         onclick: () => { close(); a.onClick(); },
       }, a.label)),
     ),
-    h('button', { type: 'button', class: 'action-sheet__cancel', onclick: close }, 'Отмена'),
+    h('button', { type: 'button', class: 'action-sheet__cancel', onclick: close }, t('action.cancel')),
   );
   dialog.addEventListener('click', (e) => { if (e.target === dialog) close(); });
   dialog.addEventListener('close', () => dialog.remove());

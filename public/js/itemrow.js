@@ -6,6 +6,7 @@ import { portion } from './calc.js';
 import { h, fmt0, fmt1, num, toInput } from './dom.js';
 import { iconTile } from './icons.js';
 import { icon, swipeRow } from './ui.js';
+import { t, macrosLine } from './i18n.js';
 
 export const MAX_GRAMS = 5000;
 export const DEFAULT_GRAMS = 100;
@@ -42,13 +43,17 @@ export function itemRow({ item, product, onChange, onDelete }) {
   const updateText = () => {
     if (!product) {
       kcalEl.textContent = '';
-      subEl.textContent = 'Продукт удалён';
+      subEl.textContent = t('product.deleted');
       return;
     }
     const p = portion(product, item.grams);
-    kcalEl.replaceChildren(fmt0.format(p.kcal), h('small', {}, ' ккал'));
-    const parts = [`Б ${fmt1.format(p.protein)}`, `Ж ${fmt1.format(p.fat)}`, `У ${fmt1.format(p.carbs)}`];
-    if (item.unit === 'pcs') parts.unshift(`${fmt0.format(item.grams)} г`);
+    kcalEl.replaceChildren(fmt0.format(p.kcal), h('small', {}, ` ${t('unit.kcal')}`));
+    const parts = [
+      `${t('macro.p')} ${fmt1.format(p.protein)}`,
+      `${t('macro.f')} ${fmt1.format(p.fat)}`,
+      `${t('macro.c')} ${fmt1.format(p.carbs)}`,
+    ];
+    if (item.unit === 'pcs') parts.unshift(`${fmt0.format(item.grams)} ${t('unit.g')}`);
     // Keep each value whole: line breaks only between them
     subEl.replaceChildren(...parts.flatMap((text, i) => [i ? ' · ' : '', h('span', { class: 'nowrap' }, text)]));
   };
@@ -68,7 +73,7 @@ export function itemRow({ item, product, onChange, onDelete }) {
     autocomplete: 'off',
     enterKeyHint: 'done',
     value: amountForInput(item, pieceGrams),
-    'aria-label': item.unit === 'pcs' ? 'Количество, штук' : 'Вес, граммы',
+    'aria-label': item.unit === 'pcs' ? t('item.amountPcs') : t('item.amountG'),
     onfocus: () => setTimeout(() => input.select(), 0),
     oninput: () => setAmount(num(input.value)),
     onkeydown: (e) => { if (e.key === 'Enter') input.blur(); },
@@ -86,14 +91,14 @@ export function itemRow({ item, product, onChange, onDelete }) {
     input.value = amountForInput(item, pieceGrams);
   };
 
-  const unitLabel = () => (item.unit === 'pcs' ? 'шт' : 'г');
+  const unitLabel = () => (item.unit === 'pcs' ? t('unit.pcs') : t('unit.g'));
   const unitEl = h('span', { class: 'stepper__unit' }, unitLabel());
 
   const stepper = h('div', { class: 'stepper' },
-    h('button', { type: 'button', 'aria-label': 'Уменьшить', onclick: () => step(-1) }, icon('minus', 18)),
+    h('button', { type: 'button', 'aria-label': t('item.decrease'), onclick: () => step(-1) }, icon('minus', 18)),
     input,
     unitEl,
-    h('button', { type: 'button', 'aria-label': 'Увеличить', onclick: () => step(1) }, icon('plus', 18)),
+    h('button', { type: 'button', 'aria-label': t('item.increase'), onclick: () => step(1) }, icon('plus', 18)),
   );
 
   /** "g | pcs" toggle — only for products with a piece weight set */
@@ -104,7 +109,7 @@ export function itemRow({ item, product, onChange, onDelete }) {
       item.unit = value;
       unitEl.textContent = unitLabel();
       input.value = amountForInput(item, pieceGrams);
-      input.setAttribute('aria-label', item.unit === 'pcs' ? 'Количество, штук' : 'Вес, граммы');
+      input.setAttribute('aria-label', item.unit === 'pcs' ? t('item.amountPcs') : t('item.amountG'));
       updateText();
       for (const b of units.children) b.setAttribute('aria-pressed', String(b.dataset.unit === item.unit));
       onChange();
@@ -115,16 +120,16 @@ export function itemRow({ item, product, onChange, onDelete }) {
       'aria-pressed': String(item.unit === value),
       onclick: () => setUnit(value),
     }, text);
-    units = h('div', { class: 'units', role: 'group', 'aria-label': 'Единицы' },
-      option('g', 'г'),
-      option('pcs', `шт · ${fmt0.format(pieceGrams)} г`),
+    units = h('div', { class: 'units', role: 'group', 'aria-label': t('item.units') },
+      option('g', t('unit.g')),
+      option('pcs', `${t('unit.pcs')} · ${fmt0.format(pieceGrams)} ${t('unit.g')}`),
     );
   }
 
   const content = h('div', { class: 'item' },
     iconTile(product ?? { name: '' }),
     h('div', { class: 'item__head' },
-      h('span', { class: 'item__title' }, product?.name ?? 'Неизвестный продукт'),
+      h('span', { class: 'item__title' }, product?.name ?? t('product.unknown')),
       kcalEl,
     ),
     h('div', { class: 'item__line' },

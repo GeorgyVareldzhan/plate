@@ -3,7 +3,8 @@ import { db } from './db.js';
 import {
   MACROS, EMPTY_TARGETS, portion, sumNutrition, targetStatus, statusClass,
 } from './calc.js';
-import { $, h, fmt0, num, toInput, plural, debounce } from './dom.js';
+import { $, h, fmt0, num, toInput, debounce } from './dom.js';
+import { t, locale, macrosLine } from './i18n.js';
 import { loadProducts } from './products.js';
 import { icon, ring, bar, swipeRow, actionSheet } from './ui.js';
 import { itemRow, addRow, newItem } from './itemrow.js';
@@ -14,7 +15,7 @@ import { go } from './nav.js';
 
 const MAX_MEALS = 10;
 
-const MACRO_NAMES = { protein: 'Белки', fat: 'Жиры', carbs: 'Углеводы' };
+const MACRO_NAMES = { protein: 'macro.protein', fat: 'macro.fat', carbs: 'macro.carbs' };
 
 let current = null; // currently open day
 let productsById = new Map();
@@ -64,15 +65,17 @@ function parseIso(iso) {
 }
 
 const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
-const fmtShort = new Intl.DateTimeFormat('ru-RU', { weekday: 'short', day: 'numeric', month: 'long' });
-const fmtShortYear = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
-const fmtFull = new Intl.DateTimeFormat('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-const fmtWeekday = new Intl.DateTimeFormat('ru-RU', { weekday: 'short' });
+// Date formats follow the UI language; created on demand because the language is set at startup
+const dateFormat = (options) => new Intl.DateTimeFormat(locale(), options);
+const fmtShort = { format: (d) => dateFormat({ weekday: 'short', day: 'numeric', month: 'long' }).format(d) };
+const fmtShortYear = { format: (d) => dateFormat({ day: 'numeric', month: 'long', year: 'numeric' }).format(d) };
+const fmtFull = { format: (d) => dateFormat({ weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(d) };
+const fmtWeekday = { format: (d) => dateFormat({ weekday: 'short' }).format(d) };
 
 function dateTitle(iso) {
-  if (iso === todayIso()) return 'Сегодня';
-  if (iso === todayIso(-1)) return 'Вчера';
-  if (iso === todayIso(1)) return 'Завтра';
+  if (iso === todayIso()) return t('day.today');
+  if (iso === todayIso(-1)) return t('day.yesterday');
+  if (iso === todayIso(1)) return t('day.tomorrow');
   const date = parseIso(iso);
   return capitalize((date.getFullYear() === new Date().getFullYear() ? fmtShort : fmtShortYear).format(date));
 }
@@ -175,12 +178,12 @@ export async function showDays() {
         h('span', { class: 'row__title' }, dateTitle(day.date)),
         h('span', { class: 'row__sub' },
           meals
-            ? `${meals} ${plural(meals, 'приём', 'приёма', 'приёмов')} · Б ${fmt0.format(total.protein)} · Ж ${fmt0.format(total.fat)} · У ${fmt0.format(total.carbs)}`
-            : 'Пусто'),
+            ? `${t('days.meals', { count: meals })} · ${macrosLine(total, 0)}`
+            : t('days.empty')),
       ),
       h('span', { class: 'day-row__kcal' },
         h('b', { class: statusClass(status) }, fmt0.format(total.kcal)),
-        h('small', {}, target ? `из ${fmt0.format(target)}` : 'ккал'),
+        h('small', {}, target ? t('days.of', { value: fmt0.format(target) }) : t('unit.kcal')),
       ),
       ring({ value: total.kcal, target, status, size: 34, stroke: 5 }),
     );
@@ -230,10 +233,10 @@ function renderTitle() {
 
 function openDayActions() {
   actionSheet(null, [
-    { label: 'Поделиться днём', onClick: shareDay },
-    { label: 'Цели на день', onClick: openTargets },
-    { label: 'Копировать на сегодня', onClick: copyDay },
-    { label: 'Удалить день', danger: true, onClick: () => deleteDay(current) },
+    { label: t('day.share'), onClick: shareDay },
+    { label: t('day.targets'), onClick: openTargets },
+    { label: t('day.copy'), onClick: copyDay },
+    { label: t('day.delete'), danger: true, onClick: () => deleteDay(current) },
   ]);
 }
 
@@ -260,19 +263,19 @@ function renderMeals() {
 function renderMeal(meal, index) {
   const total = h('span', { class: 'section-head__meta' });
   const updateTotal = () => {
-    const t = sumNutrition(meal.items, productsById);
-    total.textContent = meal.items.length ? `${fmt0.format(t.kcal)} ккал` : '';
+    const sum = sumNutrition(meal.items, productsById);
+    total.textContent = meal.items.length ? `${fmt0.format(sum.kcal)} ${t('unit.kcal')}` : '';
   };
   updateTotal();
 
   return h('section', { class: 'meal' },
     h('div', { class: 'section-head' },
-      h('h2', {}, `Приём ${index + 1}`),
+      h('h2', {}, t('meal.title', { n: index + 1 })),
       total,
       h('button', {
         type: 'button',
         class: 'section-head__btn',
-        'aria-label': `Удалить приём ${index + 1}`,
+        'aria-label': t('meal.delete', { n: index + 1 }),
         onclick: () => removeMeal(index),
       }, icon('trash', 18)),
     ),
@@ -292,14 +295,14 @@ function renderMeal(meal, index) {
           saveSoon();
         },
       })),
-      addRow('Добавить продукт', () => pickFor(meal, index)),
+      addRow(t('meal.addProduct'), () => pickFor(meal, index)),
     ),
   );
 }
 
 function removeMeal(index) {
   const meal = current.meals[index];
-  if (meal.items.length && !confirm(`Удалить приём ${index + 1} вместе с продуктами?`)) return;
+  if (meal.items.length && !confirm(t('meal.deleteConfirm', { n: index + 1 }))) return;
   current.meals.splice(index, 1);
   if (!current.meals.length) current.meals.push({ items: [] });
   renderMeals();
@@ -311,59 +314,59 @@ function removeMeal(index) {
 function kcalHint(total, target) {
   if (!target) return '';
   const diff = target - total;
-  return diff >= 0 ? `Осталось ${fmt0.format(diff)} ккал` : `Перебор ${fmt0.format(-diff)} ккал`;
+  return diff >= 0 ? t('summary.left', { value: fmt0.format(diff) }) : t('summary.over', { value: fmt0.format(-diff) });
 }
 
 /** Summary at the top of the day and compact bar at the bottom */
 function renderTotals() {
-  const t = sumNutrition(allItems(current), productsById);
+  const sum = sumNutrition(allItems(current), productsById);
   const targets = current.targets;
-  const kcalStatus = targetStatus('kcal', t.kcal, targets.kcal);
-  const hint = kcalHint(t.kcal, targets.kcal);
+  const kcalStatus = targetStatus('kcal', sum.kcal, targets.kcal);
+  const hint = kcalHint(sum.kcal, targets.kcal);
 
   summaryEl.classList.toggle('summary--empty', !targets.kcal);
   summaryEl.replaceChildren(
     ring({
-      value: t.kcal,
+      value: sum.kcal,
       target: targets.kcal,
       status: kcalStatus,
       size: 132,
       stroke: 13,
       children: [
-        h('span', { class: `summary__kcal ${statusClass(kcalStatus)}` }, fmt0.format(t.kcal)),
-        h('span', { class: 'summary__of' }, targets.kcal ? `из ${fmt0.format(targets.kcal)} ккал` : 'ккал'),
+        h('span', { class: `summary__kcal ${statusClass(kcalStatus)}` }, fmt0.format(sum.kcal)),
+        h('span', { class: 'summary__of' }, targets.kcal ? t('summary.ofKcal', { value: fmt0.format(targets.kcal) }) : t('unit.kcal')),
       ],
     }),
     h('div', { class: 'summary__macros' }, ...MACROS.map(([key]) => {
-      const status = targetStatus(key, t[key], targets[key]);
+      const status = targetStatus(key, sum[key], targets[key]);
       return h('div', { class: 'macro' },
         h('div', { class: 'macro__head' },
-          h('span', { class: 'macro__name' }, MACRO_NAMES[key]),
+          h('span', { class: 'macro__name' }, t(MACRO_NAMES[key])),
           h('span', { class: `macro__val ${statusClass(status)}` },
-            fmt0.format(t[key]),
-            h('small', {}, targets[key] ? ` / ${fmt0.format(targets[key])} г` : ' г')),
+            fmt0.format(sum[key]),
+            h('small', {}, targets[key] ? ` / ${fmt0.format(targets[key])} ${t('unit.g')}` : ` ${t('unit.g')}`)),
         ),
-        bar(t[key], targets[key], key, status),
+        bar(sum[key], targets[key], key, status),
       );
     })),
     h('div', { class: 'summary__foot' },
-      h('span', { class: `summary__hint ${statusClass(kcalStatus)}` }, hint || 'Цели не заданы'),
+      h('span', { class: `summary__hint ${statusClass(kcalStatus)}` }, hint || t('summary.noTargets')),
       h('button', { type: 'button', class: 'summary__goals', onclick: openTargets },
-        targets.kcal ? 'Цели' : 'Задать цели', icon('chevronRight', 16)),
+        targets.kcal ? t('summary.targets') : t('summary.setTargets'), icon('chevronRight', 16)),
     ),
   );
 
   totalsEl.replaceChildren(h('div', { class: 'totals-bar__inner' },
-    ring({ value: t.kcal, target: targets.kcal, status: kcalStatus, size: 40, stroke: 5 }),
+    ring({ value: sum.kcal, target: targets.kcal, status: kcalStatus, size: 40, stroke: 5 }),
     h('div', { class: 'tb__body' },
       h('div', { class: 'tb__main' },
-        h('span', { class: `tb__kcal ${statusClass(kcalStatus)}` }, fmt0.format(t.kcal)),
-        h('span', { class: 'muted' }, targets.kcal ? `/ ${fmt0.format(targets.kcal)} ккал` : 'ккал'),
+        h('span', { class: `tb__kcal ${statusClass(kcalStatus)}` }, fmt0.format(sum.kcal)),
+        h('span', { class: 'muted' }, targets.kcal ? `/ ${fmt0.format(targets.kcal)} ${t('unit.kcal')}` : t('unit.kcal')),
         h('span', { class: `tb__hint ${statusClass(kcalStatus)}` }, hint),
       ),
       h('div', { class: 'tb__macros' }, ...MACROS.map(([key, label]) => {
-        const status = targetStatus(key, t[key], targets[key]);
-        return h('span', { class: statusClass(status) }, `${label} `, h('b', {}, fmt0.format(t[key])),
+        const status = targetStatus(key, sum[key], targets[key]);
+        return h('span', { class: statusClass(status) }, `${t(label)} `, h('b', {}, fmt0.format(sum[key])),
           targets[key] ? `/${fmt0.format(targets[key])}` : '');
       })),
     ),
@@ -386,7 +389,7 @@ async function copyDay() {
 }
 
 async function deleteDay(day) {
-  if (!confirm(`Удалить день «${dateTitle(day.date)}»?`)) return;
+  if (!confirm(t('day.deleteConfirm', { name: dateTitle(day.date) }))) return;
   if (current?.id === day.id) {
     saveSoon.cancel();
     current = null;
@@ -401,7 +404,7 @@ async function pickFor(meal, index) {
   await saveSoon.flush();
   const dishes = await loadDishes();
   openPicker({
-    title: `Приём ${index + 1}`,
+    title: t('meal.title', { n: index + 1 }),
     dishes,
     dishRow: (dish, onClick) => dishRow(dish, productsById, onClick),
     onProduct: async (product) => {

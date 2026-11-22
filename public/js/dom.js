@@ -20,29 +20,28 @@ export function h(tag, props = {}, ...children) {
   return el;
 }
 
-export const fmt0 = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 });
-export const fmt1 = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
+// Number formats follow the UI language (set by i18n.js via setNumberLocale)
+let nf0 = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
+let nf1 = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 });
+let decimalComma = false;
 
-/** Number from an input: accepts a comma, empty string — NaN */
+export function setNumberLocale(locale) {
+  nf0 = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
+  nf1 = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
+  decimalComma = new Intl.NumberFormat(locale).format(1.5).includes(',');
+}
+
+export const fmt0 = { format: (n) => nf0.format(n) };
+export const fmt1 = { format: (n) => nf1.format(n) };
+
+/** Number from an input: accepts both a comma and a dot; empty string — NaN */
 export function num(value) {
   const s = String(value ?? '').trim().replace(',', '.');
   return s === '' ? NaN : Number(s);
 }
 
-/** Number for an input: 12.5 → "12,5" */
-export const toInput = (value) => String(value ?? '').replace('.', ',');
-
-export function macrosLine(n) {
-  return `Б ${fmt1.format(n.protein)} · Ж ${fmt1.format(n.fat)} · У ${fmt1.format(n.carbs)}`;
-}
-
-export function plural(n, one, few, many) {
-  const m10 = n % 10;
-  const m100 = n % 100;
-  if (m10 === 1 && m100 !== 11) return one;
-  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
-  return many;
-}
+/** Number for an input in the UI language: 12.5 → "12,5" in Russian, "12.5" in English */
+export const toInput = (value) => (decimalComma ? String(value ?? '').replace('.', ',') : String(value ?? ''));
 
 /** Debounced call with flush() — run now, and cancel() — cancel */
 export function debounce(fn, ms) {

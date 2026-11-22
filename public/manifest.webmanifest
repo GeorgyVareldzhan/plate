@@ -1,8 +1,8 @@
 {
-  "name": "Plate — граммовки под калораж",
+  "name": "Plate — portion sizes for your calorie target",
   "short_name": "Plate",
-  "description": "Подбор граммовок под дневной калораж и БЖУ",
-  "lang": "ru",
+  "description": "Portion sizes in grams for your daily calorie and macro targets",
+  "lang": "en",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

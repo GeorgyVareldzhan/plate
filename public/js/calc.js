@@ -6,10 +6,11 @@ export const TOLERANCE = 0.03;
 // Calories per 1 g of macronutrient — for computing product calories from macros
 export const KCAL_PER_GRAM = { protein: 4, fat: 9, carbs: 4 };
 
+// [key, translation key of the one-letter label]
 export const MACROS = [
-  ['protein', 'Б'],
-  ['fat', 'Ж'],
-  ['carbs', 'У'],
+  ['protein', 'macro.p'],
+  ['fat', 'macro.f'],
+  ['carbs', 'macro.c'],
 ];
 
 // Target direction: max — "at most", min — "at least"

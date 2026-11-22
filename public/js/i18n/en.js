@@ -1,0 +1,183 @@
+/**
+ * English UI strings — the base language. Every key must exist here; other languages
+ * fall back to these strings for missing keys.
+ *
+ * {name} placeholders are filled by t(key, params). Plural entries are objects keyed by
+ * Intl.PluralRules categories (one, other, …) and are selected by params.count.
+ */
+export default {
+  // Units and macros
+  'unit.g': 'g',
+  'unit.pcs': 'pcs',
+  'unit.kcal': 'kcal',
+  'macro.kcal': 'Calories',
+  'macro.protein': 'Protein',
+  'macro.fat': 'Fat',
+  'macro.carbs': 'Carbs',
+  'macro.p': 'P',
+  'macro.f': 'F',
+  'macro.c': 'C',
+
+  // Common actions
+  'action.cancel': 'Cancel',
+  'action.delete': 'Delete',
+  'action.done': 'Done',
+  'action.new': 'New',
+
+  'tabs.label': 'Sections',
+
+  // Day list
+  'days.title': 'Days',
+  'days.new': 'New day',
+  'days.welcome.title': 'Welcome to Plate',
+  'days.welcome.text': 'Create a day, set your calorie target and fine-tune portion sizes.',
+  'days.welcome.button': 'Create a day',
+  'days.meals': { one: '{count} meal', other: '{count} meals' },
+  'days.empty': 'Empty',
+  'days.of': 'of {value}',
+
+  // Day
+  'day.today': 'Today',
+  'day.yesterday': 'Yesterday',
+  'day.tomorrow': 'Tomorrow',
+  'day.actions': 'Day actions',
+  'day.date': 'Day date',
+  'day.share': 'Share day',
+  'day.targets': 'Daily targets',
+  'day.copy': 'Copy to today',
+  'day.delete': 'Delete day',
+  'day.deleteConfirm': 'Delete the day “{name}”?',
+  'day.addMeal': 'Add meal',
+  'meal.title': 'Meal {n}',
+  'meal.delete': 'Delete meal {n}',
+  'meal.deleteConfirm': 'Delete meal {n} with all its products?',
+  'meal.addProduct': 'Add product',
+
+  // Day summary
+  'summary.left': '{value} kcal left',
+  'summary.over': '{value} kcal over',
+  'summary.noTargets': 'No targets set',
+  'summary.targets': 'Targets',
+  'summary.setTargets': 'Set targets',
+  'summary.ofKcal': 'of {value} kcal',
+
+  // Targets dialog
+  'targets.atMost': 'at most',
+  'targets.atLeast': 'at least',
+  'targets.note': '3% tolerance. Leave a field empty to track the value without highlighting. A new day takes its targets from the previous one.',
+
+  // Products
+  'products.title': 'Products',
+  'products.add': 'Add product',
+  'products.search': 'Search',
+  'products.note': 'Values per 100 g, dry / raw weight',
+  'products.notFound': 'Nothing found for “{query}”',
+  'products.empty': 'No products yet. Tap “+” to add one.',
+  'products.piece': '1 {pcs} {grams} {g}',
+
+  // Product card
+  'product.title': 'Product',
+  'product.new': 'New product',
+  'product.chooseIcon': 'Choose icon',
+  'product.iconHint': 'Tap to change the icon',
+  'product.icons': 'Icons',
+  'product.iconAuto': 'Auto',
+  'product.iconAutoTitle': 'Pick by name',
+  'product.name': 'Name',
+  'product.per100': 'Per 100 g, dry / raw weight',
+  'product.kcalNote': 'Leave calories empty to calculate them from protein, fat and carbs.',
+  'product.pieceWeight': 'Weight of 1 piece',
+  'product.pieceNone': 'none',
+  'product.pieceNote': 'For products counted in pieces: an egg, a bar, a bottle. Then you can enter them in pieces in a day.',
+  'product.delete': 'Delete product',
+  'product.err.name': 'Enter a name',
+  'product.err.macro': '{name}: 0 to 100 g',
+  'product.err.macroSum': 'Protein, fat and carbs can’t add up to more than 100 g',
+  'product.err.kcal': 'Calories: 0 to 900 kcal',
+  'product.err.piece': 'Piece weight: 0 to 5000 g',
+  'product.deleteConfirm': 'Delete “{name}”?',
+  'product.deleteUsedConfirm': '“{name}” is used {where} and will be removed from there. Delete?',
+  'product.usedDays': { one: 'in {count} day', other: 'in {count} days' },
+  'product.usedDishes': { one: 'in {count} dish', other: 'in {count} dishes' },
+  'product.and': 'and',
+  'product.deleted': 'Product deleted',
+  'product.unknown': 'Unknown product',
+
+  // Item row
+  'item.amountPcs': 'Quantity, pieces',
+  'item.amountG': 'Weight, grams',
+  'item.decrease': 'Decrease',
+  'item.increase': 'Increase',
+  'item.units': 'Units',
+
+  // Picker
+  'picker.search': 'Search products',
+  'picker.dishes': 'Dishes',
+  'picker.recent': 'Recent',
+  'picker.notFound': 'Nothing found. Tap “New” to create “{query}”.',
+  'picker.ingredient': 'Ingredient',
+
+  // Dishes
+  'dishes.title': 'Dishes',
+  'dishes.new': 'New dish',
+  'dishes.empty.title': 'No dishes yet',
+  'dishes.empty.text': 'Build a dish from products to add it to a meal in one tap.',
+  'dishes.empty.button': 'Create a dish',
+  'dishes.note': 'When you add a dish to a meal, its ingredients are added separately: you can adjust their grams without changing the dish itself.',
+  'dish.actions': 'Dish actions',
+  'dish.name': 'Dish name',
+  'dish.ingredients': 'Ingredients',
+  'dish.addIngredient': 'Add ingredient',
+  'dish.delete': 'Delete dish',
+  'dish.deleteConfirm': 'Delete the dish “{name}”? Products already added to days will stay.',
+  'dish.untitled': 'Untitled',
+  'dish.empty': 'Empty',
+  'dish.macroUnit': '{name}, g',
+
+  // Share image
+  'share.empty': 'No products in this day yet',
+  'share.footer': 'Plate — portion sizes for your calorie target',
+
+  // App
+  'app.dbError': 'Could not open the database. Private Browsing may be on.',
+  'language.label': 'Language: {name}',
+
+  // Product list sections
+  'category.meat': 'Meat',
+  'category.poultry': 'Poultry',
+  'category.fish': 'Fish',
+  'category.seafood': 'Seafood',
+  'category.eggs': 'Eggs',
+  'category.dairy': 'Dairy',
+  'category.grains': 'Grains & bread',
+  'category.bakery': 'Bakery',
+  'category.readyMeals': 'Ready meals',
+  'category.vegetables': 'Vegetables',
+  'category.greens': 'Greens & mushrooms',
+  'category.fruits': 'Fruits',
+  'category.berries': 'Berries',
+  'category.driedFruits': 'Dried fruits',
+  'category.nuts': 'Nuts & seeds',
+  'category.oilsSauces': 'Oils & sauces',
+  'category.snacks': 'Snacks',
+  'category.sweets': 'Sweets & sports nutrition',
+  'category.drinks': 'Drinks',
+  'category.other': 'Other',
+
+  // Icon picker sections
+  'iconGroup.meatPoultry': 'Meat & poultry',
+  'iconGroup.fishSeafood': 'Fish & seafood',
+  'iconGroup.eggsDairy': 'Eggs & dairy',
+  'iconGroup.grainsBakery': 'Grains, bread, bakery',
+  'iconGroup.readyMeals': 'Ready meals',
+  'iconGroup.vegetables': 'Vegetables',
+  'iconGroup.greens': 'Greens & mushrooms',
+  'iconGroup.fruits': 'Fruits & berries',
+  'iconGroup.nuts': 'Nuts & seeds',
+  'iconGroup.sweets': 'Sweets',
+  'iconGroup.saucesSpices': 'Sauces & spices',
+  'iconGroup.snacks': 'Snacks',
+  'iconGroup.drinks': 'Drinks',
+  'iconGroup.alcohol': 'Alcohol',
+  'iconGroup.other': 'Other',
+};

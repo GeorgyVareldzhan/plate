@@ -1,4 +1,5 @@
 import { db } from './db.js';
+import { initLanguage, t } from './i18n.js';
 import { registerView, go } from './nav.js';
 import { initProducts, showProducts } from './products.js';
 import { initDays, showDays, showDay } from './days.js';
@@ -24,6 +25,7 @@ for (const button of document.querySelectorAll('.tabbar button')) {
 
 try {
   await db.open();
+  await initLanguage();
   initProducts();
   initDays();
   initDishes();
@@ -31,7 +33,7 @@ try {
   await go(...(takeRestoredView() || ['days']));
 } catch (error) {
   console.error(error);
-  alert('Не удалось открыть базу данных. Возможно, включён режим «Частный доступ».');
+  alert(t('app.dbError'));
 }
 
 // Ask the browser not to evict data when storage is low

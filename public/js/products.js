@@ -1,9 +1,11 @@
 /** "Products" screen, product card and shared product list rows */
 import { db } from './db.js';
 import { KCAL_PER_GRAM } from './calc.js';
-import { $, h, fmt0, num, toInput, macrosLine, plural } from './dom.js';
+import { $, h, fmt0, num, toInput } from './dom.js';
+import { t, macrosLine, categoryLabel, LANGUAGES, getLanguage, saveLanguage } from './i18n.js';
 import { ICONS, ICON_GROUPS, CATEGORIES, iconTile, productCategory, classify, renderIcon } from './icons.js';
-import { icon } from './ui.js';
+import { icon, actionSheet } from './ui.js';
+import { normalizeSearch } from './i18n/search.ru.js';
 
 let products = [];
 
@@ -15,8 +17,8 @@ export async function loadProducts() {
 
 /** Word search: the name must contain all query words, in any order ("bombbar coconut") */
 export function matchesQuery(name, query) {
-  const words = query.toLowerCase().replace(/ё/g, 'е').split(/[\s,]+/).filter(Boolean);
-  const n = name.toLowerCase().replace(/ё/g, 'е');
+  const words = normalizeSearch(query).split(/[\s,]+/).filter(Boolean);
+  const n = normalizeSearch(name);
   return words.every((w) => n.includes(w));
 }
 
@@ -33,7 +35,9 @@ function nameInSection(name, section) {
 
 /** Product row: icon, name, macros, calories. section — the section the row is shown in. */
 export function productRow(product, onClick, { chevron = false, section = null } = {}) {
-  const piece = product.pieceGrams ? ` · 1 шт ${fmt0.format(product.pieceGrams)} г` : '';
+  const piece = product.pieceGrams
+    ? ` · ${t('products.piece', { pcs: t('unit.pcs'), grams: fmt0.format(product.pieceGrams), g: t('unit.g') })}`
+    : '';
   return h('li', {},
     h('button', { type: 'button', class: 'row', onclick: onClick },
       iconTile(product),
@@ -41,7 +45,7 @@ export function productRow(product, onClick, { chevron = false, section = null }
         h('span', { class: 'row__title' }, nameInSection(product.name, section)),
         h('span', { class: 'row__sub' }, macrosLine(product) + piece),
       ),
-      h('span', { class: 'row__value' }, `${fmt0.format(product.kcal)} ккал`),
+      h('span', { class: 'row__value' }, `${fmt0.format(product.kcal)} ${t('unit.kcal')}`),
       chevron ? icon('chevronRight', 18, 'row__chevron') : null,
     ),
   );
@@ -53,17 +57,18 @@ export function productRow(product, onClick, { chevron = false, section = null }
  */
 export function renderGrouped(container, list, makeRow, { searching = false, sections = [] } = {}) {
   const groups = [];
+  // [section id, items, title]: extra sections already come with a translated title
   if (searching) {
-    groups.push([null, list]);
+    groups.push([null, list, null]);
   } else {
-    groups.push(...sections.filter(([, items]) => items.length));
-    const byCategory = new Map(CATEGORIES.map(([name]) => [name, []]));
+    for (const [title, items] of sections) if (items.length) groups.push([title, items, title]);
+    const byCategory = new Map(CATEGORIES.map(([id]) => [id, []]));
     for (const p of list) byCategory.get(productCategory(p))?.push(p);
-    for (const [name, items] of byCategory) if (items.length) groups.push([name, items]);
+    for (const [id, items] of byCategory) if (items.length) groups.push([id, items, categoryLabel(id)]);
   }
-  container.replaceChildren(...groups.flatMap(([title, items]) => [
+  container.replaceChildren(...groups.flatMap(([id, items, title]) => [
     title ? h('p', { class: 'group-title' }, title) : null,
-    h('ul', { class: 'group group--icons' }, ...items.map((item) => makeRow(item, title))),
+    h('ul', { class: 'group group--icons' }, ...items.map((item) => makeRow(item, id))),
   ]).filter(Boolean));
 }
 
@@ -76,6 +81,7 @@ const emptyEl = $('#products-empty');
 export function initProducts() {
   searchEl.addEventListener('input', render);
   $('#products-add').addEventListener('click', () => editAndRefresh(null, { name: searchEl.value.trim() }));
+  initLanguageSwitch();
   initDialog();
 }
 
@@ -89,11 +95,29 @@ function render() {
   const items = filterProducts(query);
   renderGrouped(listEl, items, (p, section) => productRow(p, () => editAndRefresh(p), { chevron: true, section }), { searching: Boolean(query) });
   emptyEl.hidden = items.length > 0;
-  emptyEl.textContent = products.length ? `Ничего не найдено по запросу «${query}»` : 'Продуктов пока нет. Нажмите «+», чтобы добавить.';
+  emptyEl.textContent = products.length ? t('products.notFound', { query }) : t('products.empty');
 }
 
 async function editAndRefresh(product, prefill) {
   if (await openProductDialog(product, prefill)) await showProducts();
+}
+
+/* ---------- Language switch (bottom of the screen, low-key on purpose) ---------- */
+
+function initLanguageSwitch() {
+  const button = $('#language-btn');
+  const current = LANGUAGES.find(([code]) => code === getLanguage());
+  button.textContent = t('language.label', { name: current[1] });
+  button.addEventListener('click', () => actionSheet(null, LANGUAGES.map(([code, name]) => ({
+    label: code === getLanguage() ? `✓ ${name}` : name,
+    onClick: async () => {
+      if (code === getLanguage()) return;
+      await saveLanguage(code);
+      // Reload so every screen is rebuilt in the new language; come back to this screen
+      try { sessionStorage.setItem('restore-view', JSON.stringify({ name: 'products', args: [] })); } catch { /* ignore */ }
+      location.reload();
+    },
+  }))));
 }
 
 /* ---------- Product card ---------- */
@@ -107,7 +131,7 @@ const iconBtn = $('#product-icon-btn');
 const iconGrid = $('#product-icons');
 
 const FIELDS = ['name', 'kcal', 'protein', 'fat', 'carbs', 'pieceGrams'];
-const MACRO_NAMES = { protein: 'Белки', fat: 'Жиры', carbs: 'Углеводы' };
+const MACRO_KEYS = ['protein', 'fat', 'carbs'];
 
 let editing = null;
 let result = null;
@@ -133,7 +157,7 @@ export function openProductDialog(product = null, prefill = {}) {
   iconGrid.hidden = true;
   iconBtn.setAttribute('aria-expanded', 'false');
 
-  titleEl.textContent = product ? 'Продукт' : 'Новый продукт';
+  titleEl.textContent = product ? t('product.title') : t('product.new');
   deleteBtn.hidden = !product;
   errorEl.hidden = true;
 
@@ -155,9 +179,9 @@ function buildIconGrid() {
     type: 'button',
     class: 'icon-grid__auto',
     role: 'option',
-    title: 'Подбирать по названию',
+    title: t('product.iconAutoTitle'),
     onclick: () => { chosenIcon = null; updateIcon(); },
-  }, 'Авто');
+  }, t('product.iconAuto'));
   const option = (key) => h('button', {
     type: 'button',
     role: 'option',
@@ -167,7 +191,7 @@ function buildIconGrid() {
   }, renderIcon(key));
   // Grid by section: the section title spans the full row
   iconGrid.replaceChildren(auto, ...ICON_GROUPS.flatMap(([title, icons]) => [
-    h('p', { class: 'icon-grid__title' }, title),
+    h('p', { class: 'icon-grid__title' }, t(`iconGroup.${title}`)),
     ...Object.keys(icons).map(option),
   ]));
 }
@@ -229,25 +253,25 @@ function updateKcalHint() {
 /** Product object or error text */
 function readProduct() {
   const name = form.elements.name.value.trim();
-  if (!name) return 'Укажите название';
+  if (!name) return t('product.err.name');
 
   const data = { name };
-  for (const key of Object.keys(MACRO_NAMES)) {
+  for (const key of MACRO_KEYS) {
     const v = macroValue(key);
-    if (!Number.isFinite(v) || v < 0 || v > 100) return `${MACRO_NAMES[key]}: от 0 до 100 г`;
+    if (!Number.isFinite(v) || v < 0 || v > 100) return t('product.err.macro', { name: t(`macro.${key}`) });
     data[key] = v;
   }
-  if (data.protein + data.fat + data.carbs > 100) return 'Сумма БЖУ не может быть больше 100 г';
+  if (data.protein + data.fat + data.carbs > 100) return t('product.err.macroSum');
 
   const kcal = fieldValue('kcal');
   data.kcal = Number.isNaN(kcal) ? kcalFromMacros() : kcal;
-  if (!Number.isFinite(data.kcal) || data.kcal < 0 || data.kcal > 900) return 'Калории: от 0 до 900 ккал';
+  if (!Number.isFinite(data.kcal) || data.kcal < 0 || data.kcal > 900) return t('product.err.kcal');
 
   const piece = fieldValue('pieceGrams');
   if (Number.isNaN(piece) || piece === 0) {
     data.pieceGrams = null;
   } else if (!Number.isFinite(piece) || piece < 0 || piece > 5000) {
-    return 'Вес штуки: от 0 до 5000 г';
+    return t('product.err.piece');
   } else {
     data.pieceGrams = piece;
   }
@@ -266,12 +290,12 @@ async function deleteProduct(product) {
   const usedDishes = dishes.filter((dish) => has(dish.items));
 
   const where = [
-    usedDays.length ? `в ${usedDays.length} ${plural(usedDays.length, 'дне', 'днях', 'днях')}` : '',
-    usedDishes.length ? `в ${usedDishes.length} ${plural(usedDishes.length, 'блюде', 'блюдах', 'блюдах')}` : '',
-  ].filter(Boolean).join(' и ');
+    usedDays.length ? t('product.usedDays', { count: usedDays.length }) : '',
+    usedDishes.length ? t('product.usedDishes', { count: usedDishes.length }) : '',
+  ].filter(Boolean).join(` ${t('product.and')} `);
   const message = where
-    ? `«${product.name}» есть ${where} и будет оттуда убран. Удалить?`
-    : `Удалить «${product.name}»?`;
+    ? t('product.deleteUsedConfirm', { name: product.name, where })
+    : t('product.deleteConfirm', { name: product.name });
   if (!confirm(message)) return false;
 
   const keep = (items) => items.filter((i) => i.productId !== product.id);

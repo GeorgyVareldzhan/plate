@@ -218,6 +218,19 @@ body[data-view="day"] .app { padding-bottom: calc(env(safe-area-inset-bottom) + 
 .footnote { margin: 7px 16px 0; font-size: 13px; color: var(--label-2); line-height: 18px; }
 .footnote--center { text-align: center; margin-top: 20px; }
 
+/* Language switch at the bottom of the Products screen: small and muted on purpose */
+.language-link {
+  display: block;
+  margin: 6px auto 0;
+  padding: 8px 12px;
+  border: 0;
+  background: none;
+  color: var(--label-2);
+  font-size: 13px;
+  cursor: pointer;
+}
+.language-link:active { opacity: .5; }
+
 /* ---------- Cards and grouped lists ---------- */
 
 .card {

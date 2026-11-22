@@ -1,0 +1,89 @@
+/**
+ * Localization.
+ *
+ * English is the base language (i18n/en.js); other languages live next to it and fall back
+ * to English for missing keys. On first launch the language is detected from the browser and
+ * saved in the database (meta store, key 'language'), so it does not change on its own later.
+ *
+ * Static markup is translated through attributes: data-i18n (text), data-i18n-aria (aria-label),
+ * data-i18n-placeholder (placeholder). Code uses t(key, params).
+ */
+import en from './i18n/en.js';
+import ru from './i18n/ru.js';
+import { db } from './db.js';
+import { setNumberLocale, fmt0, fmt1 } from './dom.js';
+
+const DICTIONARIES = { en, ru };
+
+/** Languages in the switcher: [code, name in that language] */
+export const LANGUAGES = [['en', 'English'], ['ru', 'Русский']];
+
+// Browser languages that get the Russian UI by default
+const RUSSIAN_BY_DEFAULT = ['ru', 'be', 'kk', 'ky'];
+
+let language = 'en';
+
+export const getLanguage = () => language;
+export const locale = () => (language === 'ru' ? 'ru-RU' : 'en-US');
+
+/** Language from the browser: the user's first preferred language */
+export function detectLanguage() {
+  const preferred = (navigator.languages?.[0] || navigator.language || 'en').toLowerCase();
+  return RUSSIAN_BY_DEFAULT.includes(preferred.split('-')[0]) ? 'ru' : 'en';
+}
+
+function apply(code) {
+  language = DICTIONARIES[code] ? code : 'en';
+  document.documentElement.lang = language;
+  setNumberLocale(locale());
+}
+
+/** Load the saved language (or detect and save it on first launch) and apply it */
+export async function initLanguage() {
+  const saved = await db.get('meta', 'language');
+  if (saved?.value && DICTIONARIES[saved.value]) {
+    apply(saved.value);
+  } else {
+    apply(detectLanguage());
+    await db.put('meta', { key: 'language', value: language });
+  }
+  translatePage();
+}
+
+/** Save the chosen language; the caller reloads the page so every screen re-renders */
+export async function saveLanguage(code) {
+  await db.put('meta', { key: 'language', value: code });
+}
+
+const pluralRules = {};
+
+/** Translate a key. params fill {placeholders}; params.count selects a plural form. */
+export function t(key, params = {}) {
+  let entry = DICTIONARIES[language][key] ?? en[key] ?? key;
+  if (typeof entry === 'object') {
+    pluralRules[language] ??= new Intl.PluralRules(locale());
+    const form = pluralRules[language].select(params.count ?? 0);
+    entry = entry[form] ?? entry.other ?? Object.values(entry)[0];
+  }
+  return entry.replace(/\{(\w+)\}/g, (match, name) => (params[name] ?? match));
+}
+
+/** Translate static markup marked with data-i18n* attributes */
+export function translatePage(root = document) {
+  for (const el of root.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n);
+  for (const el of root.querySelectorAll('[data-i18n-aria]')) el.setAttribute('aria-label', t(el.dataset.i18nAria));
+  for (const el of root.querySelectorAll('[data-i18n-placeholder]')) el.placeholder = t(el.dataset.i18nPlaceholder);
+}
+
+/** "P 12.5 · F 3 · C 40" in the current language; digits — 0 or 1 decimal places */
+export function macrosLine(n, digits = 1) {
+  const f = digits ? fmt1 : fmt0;
+  return `${t('macro.p')} ${f.format(n.protein)} · ${t('macro.f')} ${f.format(n.fat)} · ${t('macro.c')} ${f.format(n.carbs)}`;
+}
+
+/** Section title for a product category id (brands have no translation and keep their name) */
+export const categoryLabel = (id) => {
+  const key = `category.${id}`;
+  const label = t(key);
+  return label === key ? id : label;
+};
