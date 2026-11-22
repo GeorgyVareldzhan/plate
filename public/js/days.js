@@ -191,7 +191,7 @@ export async function showDays() {
       h('span', { class: 'day-row__kcal' },
         h('b', { class: statusClass(status) }, fmt0.format(total.kcal)),
         h('small', {}, target ? t('days.of', { value: fmt0.format(target) }) : t('unit.kcal'),
-          Math.round(carry) ? h('span', { class: `carry-badge carry-badge--${carry < 0 ? 'minus' : 'plus'}` }, signed(Math.round(carry))) : null),
+          Math.round(carry) ? h('span', { class: 'carry-badge' }, signed(Math.round(carry))) : null),
       ),
       ring({ value: total.kcal, target, status, size: 34, stroke: 5 }),
     );
@@ -343,15 +343,13 @@ const signed = (value) => `${value < 0 ? '−' : '+'}${fmt0.format(Math.abs(valu
 function carryPanel(kcal) {
   const blocks = [];
   if (Math.round(kcal.carry)) {
-    const tone = kcal.carry < 0 ? 'minus' : 'plus';
-    blocks.push(h('div', { class: `carry carry--${tone}` },
+    blocks.push(h('div', { class: 'carry carry--minus' },
       h('div', { class: 'carry__head' },
         h('span', { class: 'carry__title' }, t('summary.carryTitle')),
         h('b', { class: 'carry__total' }, `${signed(Math.round(kcal.carry))} ${t('unit.kcal')}`),
       ),
       ...kcal.sources.filter((s) => Math.round(s.share)).map((s) => h('div', { class: 'carry__row' },
-        h('span', {}, `${dateTitle(s.date)}: `,
-          t(s.deviation > 0 ? 'summary.carryOver' : 'summary.carryUnder', { value: fmt0.format(Math.abs(s.deviation)) })),
+        h('span', {}, `${dateTitle(s.date)}: `, t('summary.carryOver', { value: fmt0.format(s.deviation) })),
         h('span', { class: 'carry__num' }, signed(Math.round(s.share))),
       )),
       h('div', { class: 'carry__row carry__sum' },
@@ -362,17 +360,16 @@ function carryPanel(kcal) {
       kcal.capped && h('div', { class: 'carry__note' }, t('summary.carryCapped')),
     ));
   }
-  // A finished day: show where its own deviation goes
-  const deviation = Math.round(kcal.deviation ?? 0);
-  if (current.targets.carryOver && deviation && current.date < todayIso()) {
-    const over = deviation > 0;
+  // A finished day that went over: show where the overage goes
+  const overage = Math.round(kcal.deviation ?? 0);
+  if (current.targets.carryOver && overage > 0 && current.date < todayIso()) {
     const text = kcal.spreadDays
-      ? t(over ? 'summary.givesOver' : 'summary.givesUnder', {
+      ? t('summary.givesOver', {
         count: kcal.spreadDays,
-        value: fmt0.format(Math.abs(deviation)),
-        share: signed(-Math.round(deviation / kcal.spreadDays)),
+        value: fmt0.format(overage),
+        share: signed(-Math.round(overage / kcal.spreadDays)),
       })
-      : t(over ? 'summary.weekEndOver' : 'summary.weekEndUnder', { value: fmt0.format(Math.abs(deviation)) });
+      : t('summary.weekEndOver', { value: fmt0.format(overage) });
     blocks.push(h('div', { class: 'carry carry--gives' }, h('div', { class: 'carry__row' }, h('span', {}, text))));
   }
   return blocks;

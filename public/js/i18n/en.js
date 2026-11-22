@@ -62,18 +62,15 @@ export default {
   'summary.ofKcal': 'of {value} kcal',
   'summary.carryTitle': 'Carried over from previous days',
   'summary.carryOver': '{value} over',
-  'summary.carryUnder': '{value} under',
   'summary.carryCapped': 'At most 10% of the target, the rest is dropped',
   'summary.givesOver': { one: '{value} kcal over → {share} kcal for tomorrow', other: '{value} kcal over → {share} kcal on each of the next {count} days' },
-  'summary.givesUnder': { one: '{value} kcal under → {share} kcal for tomorrow', other: '{value} kcal under → {share} kcal on each of the next {count} days' },
   'summary.weekEndOver': '{value} kcal over is not carried: a new week starts on Monday',
-  'summary.weekEndUnder': '{value} kcal under is not carried: a new week starts on Monday',
 
   // Targets dialog
   'targets.atMost': 'at most',
   'targets.atLeast': 'at least',
   'targets.carry': 'Carry over calories',
-  'targets.carryNote': 'Calories over or under the target are split evenly across the next two days within the week (Monday to Sunday), by at most 10% of the target.',
+  'targets.carryNote': 'Calories over the target are split evenly across the next two days within the week (Monday to Sunday), lowering the target by at most 10%. Staying under is not carried.',
   'targets.note': '3% tolerance. Leave a field empty to track the value without highlighting. A new day takes its targets from the previous one.',
 
   // Products

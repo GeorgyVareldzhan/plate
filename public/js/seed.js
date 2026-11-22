@@ -19,7 +19,7 @@
  * Values per 100 g dry / raw, approximate (from reference tables).
  * pieceGrams — weight of one piece for piece-based products, otherwise null.
  */
-export const SEED_VERSION = 26;
+export const SEED_VERSION = 27;
 
 export const SEED_RENAMES = {
   'Рис белый': 'Рис',
@@ -243,6 +243,9 @@ export const SEED_PRODUCTS = [
   p('Арбуз', 27, 0.6, 0.1, 5.8),
   p('Дыня', 35, 0.6, 0.3, 7.4),
   p('Банан', 96, 1.5, 0.2, 21.8, 120),
+  // Whole banana weighed with the peel and stem: the peel is about 36% of the weight
+  p('Банан с кожурой', 61, 1, 0.1, 14, 185),
+  p('Хурма', 67, 0.5, 0.4, 15.3, 150),
   p('Апельсин', 43, 0.9, 0.2, 8.1),
 
   // Berries

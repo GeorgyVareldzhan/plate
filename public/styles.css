@@ -960,7 +960,6 @@ input:focus-visible { outline: none; }
   background: var(--carry-bg);
 }
 .carry--minus { --carry: #c2410c; --carry-bg: rgba(255, 149, 0, .13); }
-.carry--plus { --carry: var(--tint); --carry-bg: rgba(52, 199, 89, .13); }
 .carry--gives { color: var(--label-2); }
 .carry + .carry { margin-top: -6px; }
 .carry__head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 15px; line-height: 20px; }
@@ -974,10 +973,8 @@ input:focus-visible { outline: none; }
 .carry__note { color: var(--label-2); font-size: 12px; line-height: 16px; }
 
 /* Carry in the day list: "of 1,425 −75" */
-.carry-badge { margin-left: 4px; font-weight: 600; }
-.carry-badge--minus { color: #c2410c; }
-.carry-badge--plus { color: var(--tint); }
+.carry-badge { margin-left: 4px; font-weight: 600; color: #c2410c; }
 @media (prefers-color-scheme: dark) {
   .carry--minus { --carry: #ff9f0a; }
-  .carry-badge--minus { color: #ff9f0a; }
+  .carry-badge { color: #ff9f0a; }
 }

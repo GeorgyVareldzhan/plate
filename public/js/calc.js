@@ -19,8 +19,8 @@ export const TARGET_DIRECTION = { kcal: 'max', protein: 'min', fat: 'max', carbs
 // carryOver — calories over or under the target move to the following days
 export const EMPTY_TARGETS = { kcal: null, protein: null, fat: null, carbs: null, carryOver: false };
 
-// Carry-over: a day's calorie deviation is split evenly across this many following days,
-// and a day's target moves by at most this share of its base target
+// Carry-over: a day's calorie overage is split evenly across this many following days,
+// and a day's target drops by at most this share of its base target
 export const CARRY_DAYS = 2;
 export const CARRY_LIMIT = 0.1;
 
@@ -86,10 +86,10 @@ export const weekStart = (iso) => shiftIso(iso, -weekdayFromMonday(iso));
  *   spreadDays — how many following days that deviation is split across (0 on Sunday).
  * }
  *
- * With targets.carryOver on, a day receives half of the deviation (eaten minus its own
- * effective target) of each of the two previous calendar days: 1600 eaten against 1500
- * makes the next two targets 1450. Only days with products count — a skipped or empty
- * day neither gives nor receives anything from itself. The carry is capped at ±10% of
+ * With targets.carryOver on, a day takes half of the overage (eaten minus its own effective
+ * target) of each of the two previous calendar days: 1600 eaten against 1500 makes the next
+ * two targets 1450. Staying under the target is not carried: the next day keeps its base. Only days with products count — a skipped or empty
+ * day neither gives nor receives anything from itself. The carry is capped at −10% of
  * the base target; the rest is dropped. If several days share a date, the latest
  * created one counts. Weeks start on Monday and the carry never crosses into the next
  * week: Saturday's deviation goes to Sunday alone, Sunday's is dropped.
@@ -116,12 +116,12 @@ export function kcalTargets(days, productsById) {
         if (!prev || prev === day || !hasItems(prev) || !(prev.targets?.kcal > 0)) continue;
         if (weekStart(prev.date) !== weekStart(day.date)) continue;
         const { deviation, spreadDays } = resolve(prev);
+        if (!(deviation > 0)) continue; // only going over is carried; staying under gives nothing
         const share = -deviation / spreadDays;
         sources.push({ date: prev.date, deviation, share });
         carry += share;
       }
-      const limit = base * CARRY_LIMIT;
-      const clamped = Math.max(-limit, Math.min(limit, carry));
+      const clamped = Math.max(-base * CARRY_LIMIT, carry);
       capped = clamped !== carry;
       carry = clamped;
     }
