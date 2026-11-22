@@ -1,7 +1,7 @@
 'use strict';
 
-// При изменении любого файла приложения увеличьте версию — старый кэш удалится
-// Открытое приложение само перезагрузится, когда новая версия установится (см. js/update.js)
+// Bump the version whenever any app file changes — the old cache will be deleted
+// An open app reloads itself once the new version is installed (see js/update.js)
 const CACHE = 'calc-v56';
 
 const ASSETS = [
@@ -34,7 +34,7 @@ const ASSETS = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE)
-      // cache: 'reload' — брать файлы с сервера, а не из HTTP-кэша браузера, иначе можно закэшировать старые
+      // cache: 'reload' — fetch files from the server, not the browser HTTP cache, otherwise stale ones may get cached
       .then((cache) => cache.addAll(ASSETS.map((url) => new Request(url, { cache: 'reload' }))))
       .then(() => self.skipWaiting())
   );
@@ -48,7 +48,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Cache-first: приложение работает полностью без сети
+// Cache-first: the app works fully offline
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 

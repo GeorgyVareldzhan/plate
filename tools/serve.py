@@ -1,4 +1,4 @@
-"""Статический сервер для разработки: отключает кэш браузера, чтобы правки были видны сразу.
+"""Static dev server: disables the browser cache so edits show up immediately.
 
 python3 tools/serve.py [--port 8080] [--bind 127.0.0.1] [--dir public]
 """

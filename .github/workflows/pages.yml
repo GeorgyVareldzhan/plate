@@ -1,4 +1,4 @@
-# Публикация приложения (папка public/) на GitHub Pages при каждом push в main
+# Deploy the app (public/ folder) to GitHub Pages on every push to main
 name: Pages
 
 on:

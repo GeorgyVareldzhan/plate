@@ -5,5 +5,5 @@
 __pycache__/
 *.pyc
 
-# Системные
+# System files
 .DS_Store

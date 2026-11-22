@@ -1,10 +1,10 @@
-/** Мелкие помощники для работы с DOM и числами */
+/** Small helpers for the DOM and numbers */
 
 export const $ = (selector, root = document) => root.querySelector(selector);
 
 /**
- * Создать элемент: h('li', { class: 'x', onclick: fn }, 'текст', child).
- * Строки вставляются как текст, поэтому пользовательские данные безопасны.
+ * Create an element: h('li', { class: 'x', onclick: fn }, 'text', child).
+ * Strings are inserted as text, so user data is safe.
  */
 export function h(tag, props = {}, ...children) {
   const el = document.createElement(tag);
@@ -23,13 +23,13 @@ export function h(tag, props = {}, ...children) {
 export const fmt0 = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 });
 export const fmt1 = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
 
-/** Число из поля ввода: понимает запятую, пустая строка — NaN */
+/** Number from an input: accepts a comma, empty string — NaN */
 export function num(value) {
   const s = String(value ?? '').trim().replace(',', '.');
   return s === '' ? NaN : Number(s);
 }
 
-/** Число для поля ввода: 12.5 → «12,5» */
+/** Number for an input: 12.5 → "12,5" */
 export const toInput = (value) => String(value ?? '').replace('.', ',');
 
 export function macrosLine(n) {
@@ -44,7 +44,7 @@ export function plural(n, one, few, many) {
   return many;
 }
 
-/** Отложенный вызов с flush() — выполнить сейчас и cancel() — отменить */
+/** Debounced call with flush() — run now, and cancel() — cancel */
 export function debounce(fn, ms) {
   let timer = null;
   let lastArgs = [];

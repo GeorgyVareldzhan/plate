@@ -1,9 +1,9 @@
-/** Расчёты пищевой ценности и проверка целей */
+/** Nutrition calculations and target checks */
 
-// Допустимое отклонение от цели при подсветке
+// Allowed deviation from the target for highlighting
 export const TOLERANCE = 0.03;
 
-// Калорийность 1 г макронутриента — для расчёта калорий продукта по БЖУ
+// Calories per 1 g of macronutrient — for computing product calories from macros
 export const KCAL_PER_GRAM = { protein: 4, fat: 9, carbs: 4 };
 
 export const MACROS = [
@@ -12,12 +12,12 @@ export const MACROS = [
   ['carbs', 'У'],
 ];
 
-// Направление цели: max — «не более», min — «не менее»
+// Target direction: max — "at most", min — "at least"
 export const TARGET_DIRECTION = { kcal: 'max', protein: 'min', fat: 'max', carbs: 'max' };
 
 export const EMPTY_TARGETS = { kcal: null, protein: null, fat: null, carbs: null };
 
-/** Пищевая ценность порции продукта (значения продукта — на 100 г) */
+/** Nutrition of a product portion (product values are per 100 g) */
 export function portion(product, grams) {
   const k = grams / 100;
   return {
@@ -28,7 +28,7 @@ export function portion(product, grams) {
   };
 }
 
-/** Сумма по позициям; productsById — Map id → продукт */
+/** Sum over items; productsById — Map id → product */
 export function sumNutrition(items, productsById) {
   const total = { kcal: 0, protein: 0, fat: 0, carbs: 0 };
   for (const item of items) {
@@ -41,8 +41,8 @@ export function sumNutrition(items, productsById) {
 }
 
 /**
- * Статус показателя относительно цели с учётом погрешности:
- * 'ok' — в норме, 'bad' — вне нормы, null — цель не задана.
+ * Status of a value relative to its target, allowing for tolerance:
+ * 'ok' — within target, 'bad' — off target, null — no target set.
  */
 export function targetStatus(key, value, target) {
   if (!(target > 0)) return null;

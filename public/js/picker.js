@@ -1,6 +1,6 @@
 /**
- * Окно выбора продукта (и блюда — когда добавляем в приём пищи).
- * Сверху «Блюда» и «Недавние», дальше продукты по разделам; при поиске — одним списком.
+ * Product picker (and dish picker — when adding to a meal).
+ * "Dishes" and "Recent" on top, then products by section; when searching — a single list.
  */
 import { db } from './db.js';
 import { $, h } from './dom.js';
@@ -41,7 +41,7 @@ export function initPicker() {
   });
 }
 
-/** Недавно использованные продукты — из последних изменённых дней */
+/** Recently used products — from the most recently modified days */
 async function recentProducts(productsById) {
   const days = (await db.all('days')).sort((a, b) => b.updatedAt - a.updatedAt);
   const ids = [];

@@ -1,6 +1,6 @@
 /**
- * Строка продукта с количеством: иконка, название, калории порции, БЖУ, степпер «− 150 г +»
- * и переключатель «г | шт». Одна и та же в приёме пищи и в составе блюда.
+ * Product row with quantity: icon, name, portion calories, macros, stepper "− 150 g +"
+ * and "g | pcs" toggle. The same row is used in meals and in dish ingredients.
  */
 import { portion } from './calc.js';
 import { h, fmt0, fmt1, num, toInput } from './dom.js';
@@ -9,20 +9,20 @@ import { icon, swipeRow } from './ui.js';
 
 export const MAX_GRAMS = 5000;
 export const DEFAULT_GRAMS = 100;
-// Шаг кнопок «−» / «+»
+// Step for the "−" / "+" buttons
 const STEP_GRAMS = 10;
 const STEP_PIECES = 1;
 
 const round = (value, digits) => Math.round(value * 10 ** digits) / 10 ** digits;
 
-/** Новая позиция для продукта: поштучный — 1 шт, остальные — 100 г */
+/** New item for a product: piece-based — 1 piece, others — 100 g */
 export function newItem(product) {
   return product.pieceGrams > 0
     ? { productId: product.id, grams: product.pieceGrams, unit: 'pcs' }
     : { productId: product.id, grams: DEFAULT_GRAMS, unit: 'g' };
 }
 
-/** Значение для поля ввода: штуки или граммы */
+/** Value for the input: pieces or grams */
 function amountForInput(item, pieceGrams) {
   return item.unit === 'pcs' && pieceGrams
     ? toInput(round(item.grams / pieceGrams, 2))
@@ -30,8 +30,8 @@ function amountForInput(item, pieceGrams) {
 }
 
 /**
- * item — { productId, grams, unit }, меняется на месте.
- * onChange() — после любого изменения количества или единиц; onDelete() — свайп «Удалить».
+ * item — { productId, grams, unit }, mutated in place.
+ * onChange() — after any change of quantity or unit; onDelete() — "Delete" swipe.
  */
 export function itemRow({ item, product, onChange, onDelete }) {
   const pieceGrams = product?.pieceGrams > 0 ? product.pieceGrams : null;
@@ -49,12 +49,12 @@ export function itemRow({ item, product, onChange, onDelete }) {
     kcalEl.replaceChildren(fmt0.format(p.kcal), h('small', {}, ' ккал'));
     const parts = [`Б ${fmt1.format(p.protein)}`, `Ж ${fmt1.format(p.fat)}`, `У ${fmt1.format(p.carbs)}`];
     if (item.unit === 'pcs') parts.unshift(`${fmt0.format(item.grams)} г`);
-    // Каждый показатель целиком: перенос строки только между ними
+    // Keep each value whole: line breaks only between them
     subEl.replaceChildren(...parts.flatMap((text, i) => [i ? ' · ' : '', h('span', { class: 'nowrap' }, text)]));
   };
   updateText();
 
-  /** Записать количество в текущих единицах */
+  /** Set the quantity in the current unit */
   const setAmount = (amount) => {
     const value = Number.isFinite(amount) && amount > 0 ? amount : 0;
     item.grams = Math.min(MAX_GRAMS, item.unit === 'pcs' ? value * pieceGrams : value);
@@ -74,7 +74,7 @@ export function itemRow({ item, product, onChange, onDelete }) {
     onkeydown: (e) => { if (e.key === 'Enter') input.blur(); },
   });
 
-  /** Шаг «−» / «+»: значение доводится до кратного шагу (123 г → 130 или 120) */
+  /** "−" / "+" step: the value snaps to a multiple of the step (123 g → 130 or 120) */
   const step = (direction) => {
     const size = item.unit === 'pcs' ? STEP_PIECES : STEP_GRAMS;
     const amountNow = item.unit === 'pcs' ? item.grams / pieceGrams : item.grams;
@@ -96,7 +96,7 @@ export function itemRow({ item, product, onChange, onDelete }) {
     h('button', { type: 'button', 'aria-label': 'Увеличить', onclick: () => step(1) }, icon('plus', 18)),
   );
 
-  /** Переключатель «г | шт» — только у продуктов, для которых задан вес штуки */
+  /** "g | pcs" toggle — only for products with a piece weight set */
   let units = null;
   if (pieceGrams) {
     const setUnit = (value) => {
@@ -136,7 +136,7 @@ export function itemRow({ item, product, onChange, onDelete }) {
   return swipeRow(content, onDelete);
 }
 
-/** Строка «+ Добавить …» в конце списка */
+/** "+ Add …" row at the end of the list */
 export function addRow(label, onClick) {
   return h('li', {},
     h('button', { type: 'button', class: 'row row--add', onclick: onClick },

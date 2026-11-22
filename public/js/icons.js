@@ -1,20 +1,20 @@
 /**
- * Иконки и категории продуктов.
+ * Product icons and categories.
  *
- * У продукта хранится ключ иконки (product.icon), а не картинка. Сейчас ключ рисуется эмодзи;
- * чтобы перейти на свой рисованный набор, достаточно поменять renderIcon() — данные трогать не нужно.
- * Ключи не переименовывать: они уже сохранены у продуктов на устройствах.
+ * A product stores an icon key (product.icon), not an image. Currently the key is rendered as an emoji;
+ * to switch to a custom drawn set, only renderIcon() needs changing — the data stays untouched.
+ * Do not rename keys: they are already saved on products on users' devices.
  *
- * Если у продукта нет своей иконки, она и категория подбираются по названию (RULES, сверху вниз —
- * первое совпадение). Поэтому seed.js можно править, не думая об иконках, а новые продукты сразу
- * получают подходящую картинку.
+ * If a product has no icon of its own, the icon and category are matched by name (RULES, top to bottom —
+ * first match wins). So seed.js can be edited without thinking about icons, and new products get
+ * a fitting image right away.
  *
- * Эмодзи — до Unicode 15.1 (iOS 17.4+). Более новые (например, 🫜 из iOS 18.4) не берём:
- * на старых системах они показываются пустым квадратиком.
+ * Emoji up to Unicode 15.1 (iOS 17.4+). Newer ones (e.g. 🫜 from iOS 18.4) are not used:
+ * on older systems they show up as an empty box.
  */
 import { h } from './dom.js';
 
-/** Разделы сетки выбора иконки: [название, { ключ: эмодзи }] */
+/** Icon picker grid sections: [title, { key: emoji }] */
 export const ICON_GROUPS = [
   ['Мясо и птица', {
     steak: '🥩', meatBone: '🍖', bacon: '🥓', sausage: '🌭', poultry: '🍗',
@@ -77,12 +77,12 @@ export const ICON_GROUPS = [
   }],
 ];
 
-/** Все иконки: ключ → эмодзи */
+/** All icons: key → emoji */
 export const ICONS = Object.assign({}, ...ICON_GROUPS.map(([, icons]) => icons));
 
 export const DEFAULT_ICON = 'plate';
 
-/** Категории в порядке показа в списке продуктов; hue — оттенок плашки иконки */
+/** Categories in display order in the product list; hue — icon tile hue */
 export const CATEGORIES = [
   ['Мясо', 8], ['Птица', 28], ['Рыба', 205], ['Морепродукты', 190], ['Яйца', 45],
   ['Молочное', 210], ['Крупы и хлеб', 38], ['Выпечка', 32], ['Готовая еда', 18], ['Овощи', 110],
@@ -93,17 +93,17 @@ export const CATEGORIES = [
 ];
 const HUE = Object.fromEntries(CATEGORIES);
 
-// Слово целиком: \b в JS не работает с кириллицей
+// Whole word: \b in JS doesn't work with Cyrillic
 const W = (re) => new RegExp(`(^|[^а-яё])(${re})(?![а-яё])`);
 
-/** [категория, иконка, шаблон названия] — проверяются сверху вниз */
+/** [category, icon, name pattern] — checked top to bottom */
 const RULES = [
-  // --- Сначала то, что иначе поймают более общие правила
-  ['Выпечка', 'cookie', /^(?!.*(батончик|сывороточн|изолят|казеин)).*печенье/],      // раньше «печень»; «батончик, Печенье-крем» — батончик
-  ['Сладкое и спортпит', 'jar', /^(?!.*батончик).*(nutella|нутелл|топпинг|орехов\S* паст|паст\S* .*орехов)/],   // раньше «паста»
+  // --- First, things that more general rules would otherwise catch
+  ['Выпечка', 'cookie', /^(?!.*(батончик|сывороточн|изолят|казеин)).*печенье/],      // before "liver"; "bar, Cookies & cream flavour" is a bar
+  ['Сладкое и спортпит', 'jar', /^(?!.*батончик).*(nutella|нутелл|топпинг|орехов\S* паст|паст\S* .*орехов)/],   // before "paste/pasta"
   ['Сладкое и спортпит', 'cookie', /oreo|choco pie|cookie/],
   ['Сладкое и спортпит', 'candy', /raffaello|ferrero|toffifee|m&m|skittles|мишка косолап|белочк|птичье молоко|коровк|рот фронт|красная шапочк|грильяж|ласточк/],
-  // Протеиновые порошки (раньше брендов: у Bombbar есть и батончики, и порошки)
+  // Protein powders (before brands: Bombbar has both bars and powders)
   ['Сладкое и спортпит', 'shake', /^(?!.*(батончик|протеинов\S* печенье|панкейк|шоколад без)).*(протеин|изолят|казеин|whey)/],
   ['Сладкое и спортпит', 'chocolate', /^(?!.*(панкейк|вафл)).*(snickers|twix|mars(?![a-z])|bounty|milky way|kitkat|kinder|alpen gold|bombbar|snaq fabriq)/],
   ['Снеки', 'bacon', /мясн\S* чипс|джерки/],
@@ -117,12 +117,12 @@ const RULES = [
   ['Снеки', 'seeds', /семечки жарен/],
   ['Масла и соусы', 'salt', /соль|специ|приправ|паприк|куркум|корица|молот\S* перец|перец молот/],
   ['Масла и соусы', 'butter', /масло сливоч|масло топл|спред|маргарин/],
-  ['Овощи', 'olive', /маслин|оливк/],                     // раньше «масло»
+  ['Овощи', 'olive', /маслин|оливк/],                     // before "oil/butter"
   ['Масла и соусы', 'oil', /масло/],
   ['Масла и соусы', 'jar', /майонез|соус|горчиц|хрен|аджик|песто|ткемали|сметанн\S* соус/],
   ['Масла и соусы', 'tomato', /кетчуп|томатн\S* паст/],
 
-  // --- Готовая еда (до мяса и рыбы: «пельмени со свининой» — это пельмени)
+  // --- Ready meals (before meat and fish: "pork dumplings" are dumplings)
   ['Готовая еда', 'dumpling', /пельмен|вареник|манты|хинкал|равиол|гедза|дамплинг/],
   ['Готовая еда', 'pizza', /пицц/],
   ['Готовая еда', 'burger', /бургер/],
@@ -139,7 +139,7 @@ const RULES = [
   ['Готовая еда', 'salad', /салат (?!лист)|винегрет|оливье|цезарь|шуба/],
   ['Готовая еда', 'canned', /тушёнк|тушенк|паштет/],
 
-  // --- Выпечка
+  // --- Baked goods
   ['Выпечка', 'cake', /торт|пирожное|эклер|чизкейк|тирамису|наполеон|медовик/],
   ['Выпечка', 'pie', /пирог|пирожк|пирожок|чебурек|беляш|самса|хачапури|ватрушк|кулебяк|штрудел/],
   ['Выпечка', 'pancakes', /блин|оладь|оладуш|сырник|панкейк/],
@@ -150,7 +150,7 @@ const RULES = [
   ['Выпечка', 'cupcake', /кекс|маффин|капкейк/],
   ['Выпечка', 'doughnut', /пончик|донат/],
 
-  // --- Яйца, морепродукты, рыба, птица, мясо
+  // --- Eggs, seafood, fish, poultry, meat
   ['Яйца', 'friedEgg', /яичниц|омлет|глазун/],
   ['Яйца', 'egg', /яйц|яичн/],
   ['Морепродукты', 'shrimp', /кревет/],
@@ -167,22 +167,22 @@ const RULES = [
   ['Мясо', 'bacon', /грудинка|бекон|сало(?![а-яё])/],
   ['Мясо', 'steak', /говяд|говяж|свинин|телятин|конин|баранин|ягнят|ягн[её]н|козлятин|кролик|крольч|оленин|лосятин|кабан|дичь|фарш|печень|почки|язык|сердц|вырезк|стейк|мяс/],
 
-  // --- Молочное
+  // --- Dairy
   ['Сладкое и спортпит', 'iceCream', /морожен|пломбир|эскимо|сорбет|джелато/],
   ['Молочное', 'cheese', /сыр(?!оеж|ник)|брынз|моцарел|пармезан|фет[аы](?![а-яё])/],
   ['Молочное', 'milk', /молок|кефир|йогурт|сметан|творог|ряженк|сливк|простокваш|айран|кумыс|ацидофил|снежок|варенец|(^|[^а-яё])тан(?![а-яё])/],
 
-  // --- Крупы и хлеб
+  // --- Grains and bread
   ['Крупы и хлеб', 'rice', W('рис')],
   ['Крупы и хлеб', 'porridge', /овсян|хлопь|каш|мюсли|гранол/],
   ['Крупы и хлеб', 'pasta', /макарон|спагет|лапш|вермишел|фунчоз|(^|[^а-яё])паст[аы](?![а-яё])/],
   ['Крупы и хлеб', 'beans', /чечевиц|фасоль(?! стручк)|(^|[^а-яё])нут(?![а-яё])|горох(?!.*консерв)|соя(?![а-яё])|маш(?![а-яё])/],
   ['Крупы и хлеб', 'flatbread', /лаваш|лепёшк|лепешк|пита(?![а-яё])/],
-  ['Крупы и хлеб', 'taco', /тортиль/],                 // 🌯 на iPhone похож на пирожок
+  ['Крупы и хлеб', 'taco', /тортиль/],                 // 🌯 looks like a pie on iPhone
   ['Крупы и хлеб', 'bread', /хлеб|батон(?!чик)|булк|хлебц/],
   ['Крупы и хлеб', 'grain', /греч|булгур|киноа|перлов|пш[её]н|кус-кус|кускус|манк|ячн|мука|отруб/],
 
-  // --- Овощи, зелень, грибы
+  // --- Vegetables, greens, mushrooms
   ['Овощи', 'sweetPotato', /батат/],
   ['Овощи', 'potato', /картоф/],
   ['Овощи', 'carrot', /морков/],
@@ -206,7 +206,7 @@ const RULES = [
   ['Зелень и грибы', 'mushroom', /гриб|шампиньон|вешенк|лисичк|опят|маслят|сыроеж|грузд|подбер|подосин|шиитаке|рыжик|трюфел/],
   ['Овощи', 'salad', /овощ|св[её]кл|редис|редьк|(^|[^а-яё])реп[аы](?![а-яё])|хрен|пастернак|топинамбур|дайкон/],
 
-  // --- Фрукты, ягоды, сухофрукты (сок — раньше: «сок лимона» — это сок)
+  // --- Fruits, berries, dried fruits (juice first: "lemon juice" is juice)
   ['Напитки', 'juice', /сок(?![а-яё])|нектар|морс|компот|смузи/],
   ['Сухофрукты', 'grapes', /изюм/],
   ['Сухофрукты', 'peach', /кураг/],
@@ -228,13 +228,13 @@ const RULES = [
   ['Ягоды', 'strawberry', /клубник|землян/],
   ['Ягоды', 'berries', /малин|смородин|крыжов|черник|голубик|брусник|клюкв|облепих|ежевик|жимолост|шиповник|ирг|ягод/],
 
-  // --- Орехи
+  // --- Nuts
   ['Орехи и семечки', 'peanut', /арахис/],
   ['Орехи и семечки', 'coconut', /кокос/],
   ['Орехи и семечки', 'seeds', /семечк|семен|кунжут|чиа(?![а-яё])/],
   ['Орехи и семечки', 'nut', /орех|фундук|миндал|кешью|фисташ|пекан|макадам/],
 
-  // --- Сладкое и спортпит
+  // --- Sweets and sports nutrition
   ['Сладкое и спортпит', 'pill', /витамин|омега|креатин|bcaa|аминокисл|рыбий жир|коллаген|л-карнитин/],
   ['Сладкое и спортпит', 'chocolate', /батончик|шоколад/],
   ['Сладкое и спортпит', 'shake', /протеин|гейнер/],
@@ -243,7 +243,7 @@ const RULES = [
   ['Сладкое и спортпит', 'lollipop', /карамел|леденц|чупа/],
   ['Сладкое и спортпит', 'candy', /сахар|конфет|варень|джем|повидл|зефир|пастил|мармелад|халв|козинак|сироп/],
 
-  // --- Напитки и алкоголь
+  // --- Drinks and alcohol
   ['Напитки', 'beer', /пиво|квас/],
   ['Напитки', 'greenApple', /сидр/],
   ['Напитки', 'champagne', /шампан|игрист|просекко|ламбруск/],
@@ -259,11 +259,11 @@ const RULES = [
   ['Напитки', 'coffee', /кофе|какао|капучин|латте|эспрессо|американо/],
   ['Напитки', 'water', /вода|минерал/],
 
-  // --- В самом конце: консервы, которые не поймали правила выше
+  // --- At the very end: canned goods not caught by the rules above
   ['Другое', 'canned', /консерв/],
 ];
 
-/** Категория и иконка по названию продукта */
+/** Category and icon by product name */
 export function classify(name) {
   const n = name.toLowerCase();
   for (const [category, icon, pattern] of RULES) {
@@ -272,10 +272,10 @@ export function classify(name) {
   return { category: 'Другое', icon: DEFAULT_ICON };
 }
 
-/** Категория по иконке — для продуктов с незнакомым названием, но выбранной вручную иконкой */
+/** Category by icon — for products with an unrecognized name but a manually chosen icon */
 const ICON_CATEGORY = {};
 for (const [category, key] of RULES) ICON_CATEGORY[key] ??= category;
-// Иконки, для которых нет правил по названию
+// Icons with no name-based rules
 Object.assign(ICON_CATEGORY, {
   tropicalFish: 'Рыба', blowfish: 'Рыба', shark: 'Рыба',
   friedShrimp: 'Морепродукты', shell: 'Морепродукты', fishCake: 'Морепродукты', babyBottle: 'Молочное',
@@ -289,27 +289,27 @@ Object.assign(ICON_CATEGORY, {
 
 export const productIcon = (product) => (product?.icon && ICONS[product.icon] ? product.icon : classify(product?.name ?? '').icon);
 
-/** Бренды — отдельными разделами в списке продуктов. Иконка и цвет плашки — по типу продукта. */
+/** Brands get their own sections in the product list. Icon and tile color follow the product type. */
 const BRANDS = [
   ['Bombbar', /bombbar/],
   ['Snaq Fabriq', /snaq fabriq/],
 ];
 
-/** Категория по типу продукта (мясо, сладкое…) — от неё цвет плашки иконки */
+/** Category by product type (meat, sweets…) — determines the icon tile color */
 function typeCategory(product) {
   const { category } = classify(product?.name ?? '');
   if (category !== 'Другое' || !product?.icon) return category;
   return ICON_CATEGORY[product.icon] ?? category;
 }
 
-/** Раздел в списке продуктов: бренд, если продукт брендовый, иначе категория по типу */
+/** Product list section: the brand for branded products, otherwise the type category */
 export function productCategory(product) {
   const name = (product?.name ?? '').toLowerCase();
   const brand = BRANDS.find(([, pattern]) => pattern.test(name));
   return brand ? brand[0] : typeCategory(product);
 }
 
-/** Плашка с иконкой продукта */
+/** Product icon tile */
 export function iconTile(product, size = '') {
   const key = productIcon(product);
   const hue = HUE[typeCategory(product)] ?? 0;
@@ -320,7 +320,7 @@ export function iconTile(product, size = '') {
   }, renderIcon(key));
 }
 
-/** Как рисуется иконка. Для рисованного набора — вернуть здесь <svg> по ключу. */
+/** How an icon is rendered. For a drawn set, return an <svg> for the key here. */
 export function renderIcon(key) {
   return ICONS[key] ?? ICONS[DEFAULT_ICON];
 }

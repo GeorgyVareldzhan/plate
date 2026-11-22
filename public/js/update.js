@@ -1,10 +1,10 @@
 /**
- * Автообновление.
+ * Auto-update.
  *
- * Service worker проверяет новую версию при открытии приложения и при возврате к нему из фона.
- * Новая версия ставится сама (skipWaiting + clients.claim в sw.js), после чего страница один раз
- * перезагружается. Если пользователь в этот момент что-то вводит или открыта карточка, перезагрузка
- * ждёт, пока он закончит. Перед перезагрузкой правки сохраняются, после неё открывается тот же экран.
+ * The service worker checks for a new version when the app is opened and when it returns from the background.
+ * The new version installs itself (skipWaiting + clients.claim in sw.js), after which the page reloads
+ * once. If the user is typing or a card is open at that moment, the reload waits until they are
+ * done. Edits are saved before the reload, and the same screen is reopened after it.
  */
 import { currentView } from './nav.js';
 import { flushDay } from './days.js';
@@ -15,20 +15,20 @@ const RESTORE_KEY = 'restore-view';
 let pending = false;
 let reloading = false;
 
-/** Экран, который был открыт до автоперезагрузки: [name, ...args] или null */
+/** Screen that was open before the auto-reload: [name, ...args] or null */
 export function takeRestoredView() {
   try {
     const saved = JSON.parse(sessionStorage.getItem(RESTORE_KEY));
     sessionStorage.removeItem(RESTORE_KEY);
     if (saved?.name) return [saved.name, ...(saved.args || [])];
-  } catch { /* нет доступа к sessionStorage — открываем экран по умолчанию */ }
+  } catch { /* no access to sessionStorage — open the default screen */ }
   return null;
 }
 
 export function setupAutoUpdate() {
   if (!('serviceWorker' in navigator)) return;
 
-  // Нет контроллера — это первая установка (или жёсткое обновление): страница и так свежая
+  // No controller — this is the first install (or a hard reload): the page is already fresh
   const hadController = Boolean(navigator.serviceWorker.controller);
 
   navigator.serviceWorker.register('sw.js')
@@ -46,10 +46,10 @@ export function setupAutoUpdate() {
     tryReload();
   });
 
-  // Повторные попытки, когда пользователь закончил ввод или закрыл окно
+  // Retry when the user finishes typing or closes a dialog
   document.addEventListener('visibilitychange', tryReload);
   document.addEventListener('focusout', () => setTimeout(tryReload, 300));
-  document.addEventListener('close', tryReload, true); // событие close у <dialog> не всплывает
+  document.addEventListener('close', tryReload, true); // <dialog>'s close event doesn't bubble
 }
 
 function isBusy() {
@@ -70,7 +70,7 @@ async function tryReload() {
   }
   try {
     sessionStorage.setItem(RESTORE_KEY, JSON.stringify(currentView));
-  } catch { /* не страшно — откроется список дней */ }
+  } catch { /* not a big deal — the day list will open */ }
 
   location.reload();
 }

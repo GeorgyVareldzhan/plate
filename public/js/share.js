@@ -1,14 +1,14 @@
 /**
- * «Поделиться днём»: картинка с меню дня и граммовками — например, чтобы отправить тому, кто готовит.
+ * "Share day": an image of the day menu with portions — e.g. to send to whoever is cooking.
  *
- * Рисуется на canvas и сразу отдаётся в системное меню «Поделиться». Всё делается синхронно в обработчике
- * нажатия: Safari разрешает navigator.share() только сразу после жеста пользователя.
+ * Drawn on a canvas and handed straight to the system share sheet. Everything runs synchronously in the
+ * tap handler: Safari allows navigator.share() only right after a user gesture.
  */
 import { portion, sumNutrition, targetStatus } from './calc.js';
 import { fmt0, fmt1 } from './dom.js';
 import { productIcon, renderIcon } from './icons.js';
 
-// Логотип грузим заранее, чтобы в момент нажатия он уже был готов
+// Preload the logo so it is ready by the time of the tap
 const logo = new Image();
 logo.src = 'icons/icon-192.png';
 
@@ -20,7 +20,7 @@ const ROW_H = 118;
 const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif';
 const EMOJI_FONT = '"Apple Color Emoji", "Noto Color Emoji", "Segoe UI Emoji", sans-serif';
 
-// Светлая тема всегда: картинка должна читаться в любом мессенджере
+// Always light theme: the image must be readable in any messenger
 const C = {
   bg: '#f2f2f7', card: '#ffffff', text: '#000000', muted: '#6e6e73', sep: '#e5e5ea', tileBg: '#f2f2f7',
   ok: '#248a3d', bad: '#ff3b30', neutral: '#000000', protein: '#5e5ce6', fat: '#ff9f0a', carbs: '#32ade6',
@@ -38,7 +38,7 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-/** Обрезать строку с многоточием под ширину */
+/** Truncate a string with an ellipsis to fit the width */
 function fit(ctx, text, maxWidth) {
   if (ctx.measureText(text).width <= maxWidth) return text;
   let s = text;
@@ -46,7 +46,7 @@ function fit(ctx, text, maxWidth) {
   return `${s.trimEnd()}…`;
 }
 
-/** Разбить строку на 2 строки по словам под ширину; вторая при нехватке места — с многоточием */
+/** Word-wrap a string into 2 lines to fit the width; the second gets an ellipsis if space runs out */
 function wrap2(ctx, text, maxWidth) {
   if (ctx.measureText(text).width <= maxWidth) return [text];
   const words = text.split(' ');
@@ -60,7 +60,7 @@ function wrap2(ctx, text, maxWidth) {
   return [first, fit(ctx, text.slice(first.length).trim(), maxWidth)];
 }
 
-/** Количество так, как его удобно отмерять: «3 шт · 165 г» или «250 г» */
+/** Quantity in the form convenient for measuring: "3 pcs · 165 g" or "250 g" */
 function amountText(item, product) {
   const grams = `${fmt0.format(item.grams)} г`;
   if (item.unit === 'pcs' && product?.pieceGrams > 0) {
@@ -72,8 +72,8 @@ function amountText(item, product) {
 const statusColor = (status) => (status === 'ok' ? C.ok : status === 'bad' ? C.bad : C.neutral);
 
 /**
- * Нарисовать карточку дня.
- * day — { targets, meals }, productsById — Map, date — подпись даты («Суббота, 22 ноября 2026 г.»).
+ * Draw the day card.
+ * day — { targets, meals }, productsById — Map, date — date label ("Saturday, 22 November 2026").
  */
 export function renderDayImage({ day, productsById, date }) {
   const meals = day.meals
@@ -84,9 +84,9 @@ export function renderDayImage({ day, productsById, date }) {
   const SUMMARY_H = 280;
   const MEAL_HEAD_H = 84;
   const FOOTER_H = 110;
-  const LINE2_H = 46; // добавка к строке, если название в 2 строки
+  const LINE2_H = 46; // extra row height when the name wraps to 2 lines
 
-  // Заранее раскладываем строки: длинные названия переносятся, строка становится выше
+  // Lay out rows up front: long names wrap and the row gets taller
   const measure = document.createElement('canvas').getContext('2d');
   for (const meal of meals) {
     meal.rows = meal.items.map((item) => {
@@ -113,7 +113,7 @@ export function renderDayImage({ day, productsById, date }) {
   ctx.fillStyle = C.bg;
   ctx.fillRect(0, 0, W, H);
 
-  // --- Шапка: логотип, Plate, дата
+  // --- Header: logo, Plate, date
   let y = PAD;
   if (logo.complete && logo.naturalWidth) {
     ctx.save();
@@ -130,7 +130,7 @@ export function renderDayImage({ day, productsById, date }) {
   ctx.fillText(fit(ctx, date, CARD_W - 112), PAD + 112, y + 84);
   y = HEADER_H;
 
-  // --- Итог дня
+  // --- Day total
   const t = sumNutrition(day.meals.flatMap((m) => m.items), productsById);
   const targets = day.targets ?? {};
   roundRect(ctx, CARD_X, y, CARD_W, SUMMARY_H - 40, 28); // 240
@@ -170,7 +170,7 @@ export function renderDayImage({ day, productsById, date }) {
   });
   y += SUMMARY_H;
 
-  // --- Приёмы пищи
+  // --- Meals
   if (!meals.length) {
     ctx.fillStyle = C.muted;
     ctx.font = font(36, 400);
@@ -197,12 +197,12 @@ export function renderDayImage({ day, productsById, date }) {
     let ry = y;
     meal.rows.forEach((row, i) => {
       const { item, product, amount, aw, textW, lines, h } = row;
-      const extra = h - ROW_H; // сдвиг для второй строки названия
+      const extra = h - ROW_H; // offset for the second line of the name
       if (i) {
         ctx.fillStyle = C.sep;
         ctx.fillRect(CARD_X + 128, ry, CARD_W - 128, 2);
       }
-      // иконка
+      // icon
       roundRect(ctx, CARD_X + 32, ry + 23 + extra / 2, 72, 72, 18);
       ctx.fillStyle = C.tileBg;
       ctx.fill();
@@ -211,12 +211,12 @@ export function renderDayImage({ day, productsById, date }) {
       ctx.fillText(renderIcon(productIcon(product ?? { name: '' })), CARD_X + 68, ry + 75 + extra / 2);
       ctx.textAlign = 'left';
 
-      // количество — крупно справа
+      // quantity — large, on the right
       ctx.fillStyle = C.text;
       ctx.font = font(44, 700);
       ctx.fillText(amount, CARD_X + CARD_W - 36 - aw, ry + 74 + extra / 2);
 
-      // название (1–2 строки) и калории
+      // name (1–2 lines) and calories
       const textX = CARD_X + 128;
       ctx.fillStyle = C.text;
       ctx.font = font(38, 500);
@@ -232,7 +232,7 @@ export function renderDayImage({ day, productsById, date }) {
     y += cardH + 40;
   }
 
-  // --- Подвал
+  // --- Footer
   ctx.fillStyle = C.muted;
   ctx.font = font(28, 400);
   ctx.textAlign = 'center';
@@ -242,7 +242,7 @@ export function renderDayImage({ day, productsById, date }) {
   return canvas;
 }
 
-/** canvas → File синхронно (toBlob асинхронный, а share() нужен сразу после нажатия) */
+/** canvas → File synchronously (toBlob is async, but share() must be called right after the tap) */
 export function canvasToFile(canvas, name) {
   const dataUrl = canvas.toDataURL('image/png');
   const bytes = atob(dataUrl.split(',')[1]);
@@ -251,7 +251,7 @@ export function canvasToFile(canvas, name) {
   return new File([buffer], name, { type: 'image/png' });
 }
 
-/** Системное меню «Поделиться»; если его нет (компьютер) — скачать файл */
+/** System share sheet; if unavailable (desktop), download the file */
 export function shareFile(file, title) {
   const download = () => {
     const url = URL.createObjectURL(file);

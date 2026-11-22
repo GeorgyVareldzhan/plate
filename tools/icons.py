@@ -1,7 +1,7 @@
-"""Иконки приложения из public/icons/logo.svg: python3 tools/icons.py [public/icons]
+"""App icons from public/icons/logo.svg: python3 tools/icons.py [public/icons]
 
-SVG рендерится headless-браузером Chrome (единый источник для логотипа в приложении и иконок),
-дальше Pillow уменьшает картинку до нужных размеров. Нужны google-chrome (или chromium) и Pillow.
+The SVG is rendered by headless Chrome (a single source for the in-app logo and the icons),
+then Pillow scales the image down to the required sizes. Requires google-chrome (or chromium) and Pillow.
 """
 import os
 import shutil

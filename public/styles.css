@@ -1,9 +1,9 @@
 /* ==========================================================================
-   Plate — стили в духе iOS (Human Interface Guidelines)
+   Plate — iOS-style styles (Human Interface Guidelines)
    ========================================================================== */
 
 :root {
-  /* Системные цвета iOS (светлая тема) */
+  /* iOS system colors (light theme) */
   --bg: #f2f2f7;
   --card: #ffffff;
   --card-raised: #ffffff;
@@ -12,10 +12,10 @@
   --label-3: rgba(60, 60, 67, .3);
   --fill: rgba(118, 118, 128, .12);
   --fill-2: rgba(118, 118, 128, .2);
-  --row-active: #e5e5ea;   /* подсветка нажатой строки — непрозрачная, чтобы под ней ничего не просвечивало */
+  --row-active: #e5e5ea;   /* pressed row highlight — opaque so nothing shows through underneath */
   --sep: rgba(60, 60, 67, .29);
-  --tint: #248a3d;          /* акцент приложения: доступный зелёный для текста */
-  --tint-fill: #34c759;     /* заливки акцентом */
+  --tint: #248a3d;          /* app accent: accessible green for text */
+  --tint-fill: #34c759;     /* accent fills */
   --ok: #248a3d;
   --ok-fill: #34c759;
   --bad: #ff3b30;
@@ -25,10 +25,10 @@
   --carbs: #32ade6;
   --bar-bg: rgba(249, 249, 249, .8);
   --shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 4px 16px rgba(0, 0, 0, .04);
-  --tile-l: 92%;            /* светлота плашки иконки */
+  --tile-l: 92%;            /* icon tile lightness */
   --tile-s: 70%;
 
-  /* Тонкие линии: --hair для рамок, --dpr для разделителей списков (см. .group) */
+  /* Hairlines: --hair for borders, --dpr for list separators (see .group) */
   --hair: 1px;
   --dpr: 1;
 
@@ -101,13 +101,13 @@ input { font: inherit; letter-spacing: inherit; }
 .is-bad { color: var(--bad); }
 .muted { color: var(--label-2); }
 
-/* ---------- Каркас ---------- */
+/* ---------- Layout ---------- */
 
 .app {
   max-width: 600px;
   margin: 0 auto;
   padding:
-    calc(env(safe-area-inset-top) + 16px) /* отступ от верха экрана (под вырезом iPhone) */
+    calc(env(safe-area-inset-top) + 16px) /* offset from the top of the screen (below the iPhone notch) */
     calc(env(safe-area-inset-right) + var(--gutter))
     calc(env(safe-area-inset-bottom) + var(--tabbar-h) + 32px)
     calc(env(safe-area-inset-left) + var(--gutter));
@@ -115,23 +115,23 @@ input { font: inherit; letter-spacing: inherit; }
 body[data-view="day"] .tabbar, body[data-view="dish"] .tabbar { display: none; }
 body[data-view="day"] .app { padding-bottom: calc(env(safe-area-inset-bottom) + 100px); }
 
-/* Экраны переключаются без анимации, как вкладки в iOS: анимация слоя заставляла Safari
-   перерисовывать тонкие разделители после её окончания — линии мигали */
+/* Screens switch without animation, like iOS tabs: the layer animation made Safari
+   repaint hairline separators after it finished — the lines flickered */
 
-/* ---------- Навбар и заголовки ---------- */
+/* ---------- Navbar and titles ---------- */
 
-/* Логотип и название приложения в шапке главного экрана */
+/* App logo and name in the main screen header */
 .brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding-left: 10px; /* до заголовка экрана — margin-top у .large-title */
+  padding-left: 10px; /* spacing to the screen title is margin-top on .large-title */
 }
 .brand__logo {
   display: block;
   width: 30px;
   height: 30px;
-  border-radius: 8px; /* как у иконок приложений iOS */
+  border-radius: 8px; /* like iOS app icons */
   box-shadow: 0 1px 3px rgba(0, 0, 0, .12);
 }
 .brand__name {
@@ -168,7 +168,7 @@ body[data-view="day"] .app { padding-bottom: calc(env(safe-area-inset-bottom) + 
 .nav-icon:active, .nav-back:active { opacity: .35; }
 
 .large-title {
-  margin: 24px 0 12px; /* отступ от шапки (логотипа / кнопок) */
+  margin: 24px 0 12px; /* spacing from the header (logo / buttons) */
   font-size: 34px;
   font-weight: 700;
   letter-spacing: .01em;
@@ -218,7 +218,7 @@ body[data-view="day"] .app { padding-bottom: calc(env(safe-area-inset-bottom) + 
 .footnote { margin: 7px 16px 0; font-size: 13px; color: var(--label-2); line-height: 18px; }
 .footnote--center { text-align: center; margin-top: 20px; }
 
-/* ---------- Карточки и сгруппированные списки ---------- */
+/* ---------- Cards and grouped lists ---------- */
 
 .card {
   background: var(--card);
@@ -235,7 +235,7 @@ body[data-view="day"] .app { padding-bottom: calc(env(safe-area-inset-bottom) + 
   box-shadow: var(--shadow);
   overflow: hidden;
 }
-/* Разделитель как в iOS — начинается от текста, а не от края */
+/* iOS-style separator — starts at the text, not at the edge */
 .group > li { position: relative; }
 .group > li + li::before {
   content: "";
@@ -243,8 +243,8 @@ body[data-view="day"] .app { padding-bottom: calc(env(safe-area-inset-bottom) + 
   top: 0;
   right: 0;
   left: var(--sep-inset, 16px);
-  /* Линия 1px, сжатая до 1 физического пикселя. Трансформация не даёт Safari округлить её до нуля
-     при выравнивании по пикселям — иначе линия пропадает после анимации экрана */
+  /* A 1px line scaled down to 1 physical pixel. The transform keeps Safari from rounding it to zero
+     during pixel snapping — otherwise the line disappears after a screen animation */
   height: 1px;
   transform: scaleY(calc(1 / var(--dpr)));
   transform-origin: 0 0;
@@ -255,7 +255,7 @@ body[data-view="day"] .app { padding-bottom: calc(env(safe-area-inset-bottom) + 
 
 .section-head {
   display: flex;
-  align-items: center; /* заголовок, калории и корзина — на одной оси */
+  align-items: center; /* title, calories and trash on one axis */
   gap: 8px;
   margin: 26px 4px 8px;
 }
@@ -266,7 +266,7 @@ body[data-view="day"] .app { padding-bottom: calc(env(safe-area-inset-bottom) + 
   place-items: center;
   width: 36px;
   height: 36px;
-  margin: -4px -8px -4px -4px; /* зона нажатия больше, но не раздвигает шапку */
+  margin: -4px -8px -4px -4px; /* larger tap area without enlarging the header */
   padding: 0;
   border: 0;
   background: none;
@@ -276,7 +276,7 @@ body[data-view="day"] .app { padding-bottom: calc(env(safe-area-inset-bottom) + 
 .section-head__btn .icon { display: block; }
 .section-head__btn:active { opacity: .4; }
 
-/* ---------- Строки ---------- */
+/* ---------- Rows ---------- */
 
 .row {
   display: flex;
@@ -320,7 +320,7 @@ button.row:active, .row--tap:active { background: var(--row-active); }
   place-items: center;
 }
 
-/* Плашка с иконкой продукта */
+/* Product icon tile */
 .tile {
   flex: none;
   width: 40px;
@@ -335,7 +335,7 @@ button.row:active, .row--tap:active { background: var(--row-active); }
 .tile--lg { width: 76px; height: 76px; border-radius: 18px; font-size: 44px; }
 .tile--sm { width: 30px; height: 30px; border-radius: 8px; font-size: 17px; }
 
-/* ---------- Свайп для удаления ---------- */
+/* ---------- Swipe to delete ---------- */
 
 .swipe { overflow: hidden; }
 .swipe:not(.is-revealed) .swipe__actions { visibility: hidden; }
@@ -356,7 +356,7 @@ button.row:active, .row--tap:active { background: var(--row-active); }
 }
 .swipe__content { position: relative; z-index: 1; touch-action: pan-y; }
 
-/* ---------- Список дней ---------- */
+/* ---------- Day list ---------- */
 
 .day-row .tile-date {
   flex: none;
@@ -377,7 +377,7 @@ button.row:active, .row--tap:active { background: var(--row-active); }
 .day-row__kcal small { font-size: 12px; color: var(--label-2); }
 #days-list { --sep-inset: 72px; }
 
-/* ---------- Кольцо и полоски ---------- */
+/* ---------- Ring and bars ---------- */
 
 .ring {
   position: relative;
@@ -436,7 +436,7 @@ button.row:active, .row--tap:active { background: var(--row-active); }
 .dot--fat { background: var(--fat); }
 .dot--carbs { background: var(--carbs); }
 
-/* ---------- Сводка дня ---------- */
+/* ---------- Day summary ---------- */
 
 .summary {
   padding: 16px;
@@ -483,7 +483,7 @@ button.row:active, .row--tap:active { background: var(--row-active); }
 }
 .summary--empty .ring__track { stroke-dasharray: 3 5; }
 
-/* ---------- Блюдо ---------- */
+/* ---------- Dish ---------- */
 
 .title-input {
   width: 100%;
@@ -519,7 +519,7 @@ button.row:active, .row--tap:active { background: var(--row-active); }
 .dish-macro--carbs b { color: var(--carbs); }
 #view-dishes .footnote { margin-top: 12px; }
 
-/* ---------- Приём пищи: строка продукта ---------- */
+/* ---------- Meal: product row ---------- */
 
 .item {
   display: grid;
@@ -539,7 +539,7 @@ button.row:active, .row--tap:active { background: var(--row-active); }
 .item__controls { flex: none; display: grid; justify-items: end; gap: 6px; }
 .nowrap { white-space: nowrap; }
 
-/* Степпер «− 150 г +» */
+/* Stepper "− 150 g +" */
 .stepper {
   display: flex;
   align-items: center;
@@ -573,7 +573,7 @@ button.row:active, .row--tap:active { background: var(--row-active); }
 }
 .stepper__unit { min-width: 1.7em; padding-left: 3px; font-size: 15px; color: var(--label-2); }
 
-/* Сегментированный переключатель «г | шт» */
+/* Segmented control "g | pcs" */
 .units {
   display: flex;
   background: var(--fill);
@@ -600,7 +600,7 @@ button.row:active, .row--tap:active { background: var(--row-active); }
 
 .meal-empty { padding: 14px 16px 4px; color: var(--label-2); font-size: 15px; margin: 0; }
 
-/* ---------- Кнопки ---------- */
+/* ---------- Buttons ---------- */
 
 .btn {
   display: inline-flex;
@@ -634,7 +634,7 @@ button.row:active, .row--tap:active { background: var(--row-active); }
 .link--bold { font-weight: 600; }
 .link:active { opacity: .35; }
 
-/* ---------- Поиск ---------- */
+/* ---------- Search ---------- */
 
 .search {
   display: flex;
@@ -659,7 +659,7 @@ button.row:active, .row--tap:active { background: var(--row-active); }
 }
 .search input::placeholder { color: var(--label-2); }
 
-/* ---------- Пустые состояния ---------- */
+/* ---------- Empty states ---------- */
 
 .empty-state { text-align: center; padding: 48px 24px; display: grid; justify-items: center; gap: 8px; }
 .empty-state__icon { font-size: 56px; margin-bottom: 8px; }
@@ -668,7 +668,7 @@ button.row:active, .row--tap:active { background: var(--row-active); }
 .empty-state__text { margin: 0 0 16px; color: var(--label-2); max-width: 300px; }
 .empty-note { text-align: center; color: var(--label-2); margin: 32px 0; }
 
-/* ---------- Нижняя панель итогов дня ---------- */
+/* ---------- Bottom day totals bar ---------- */
 
 .totals-bar {
   position: fixed;
@@ -701,7 +701,7 @@ button.row:active, .row--tap:active { background: var(--row-active); }
 .tb__macros .is-bad b { color: var(--bad); }
 .tb__macros .is-ok b { color: var(--ok); }
 
-/* ---------- Таббар ---------- */
+/* ---------- Tab bar ---------- */
 
 .tabbar {
   position: fixed;
@@ -735,7 +735,7 @@ button.row:active, .row--tap:active { background: var(--row-active); }
 .tabbar svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .tabbar button[aria-current="page"] { color: var(--tint); }
 
-/* ---------- Модальные листы ---------- */
+/* ---------- Modal sheets ---------- */
 
 dialog.sheet {
   width: 100%;
@@ -778,7 +778,7 @@ dialog.sheet::backdrop { background: rgba(0, 0, 0, .4); animation: fade-in .3s; 
 .sheet .search { margin-bottom: 4px; }
 .sheet .group-title:first-child { margin-top: 8px; }
 
-/* Строки формы как в «Настройках» */
+/* Form rows like in iOS Settings */
 .form-row {
   display: flex;
   align-items: center;
@@ -813,7 +813,7 @@ dialog.sheet::backdrop { background: rgba(0, 0, 0, .4); animation: fade-in .3s; 
 
 .error { margin: 12px 16px 0; color: var(--bad); font-size: 15px; }
 
-/* Карточка продукта: иконка и выбор */
+/* Product card: icon and picker */
 .product-hero { display: grid; justify-items: center; gap: 8px; margin: 4px 0 20px; }
 .product-hero__icon { border: 0; padding: 0; background: none; cursor: pointer; border-radius: 18px; }
 .product-hero__icon:active { transform: scale(.96); }
@@ -850,7 +850,7 @@ dialog.sheet::backdrop { background: rgba(0, 0, 0, .4); animation: fade-in .3s; 
   letter-spacing: .02em;
 }
 
-/* ---------- Меню действий (action sheet) ---------- */
+/* ---------- Action sheet ---------- */
 
 dialog.action-sheet {
   width: calc(100% - 16px);
@@ -889,7 +889,7 @@ dialog.action-sheet::backdrop { background: rgba(0, 0, 0, .4); animation: fade-i
 .action-sheet__cancel { margin-top: 8px; font-weight: 600; border-top: 0; }
 .action-sheet button:focus-visible { outline: none; background: var(--fill); }
 
-/* ---------- Доступность ---------- */
+/* ---------- Accessibility ---------- */
 
 :focus-visible { outline: 2px solid var(--tint); outline-offset: 2px; }
 dialog:focus-visible { outline: none; }

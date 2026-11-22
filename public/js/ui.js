@@ -1,4 +1,4 @@
-/** Общие элементы интерфейса: SVG-иконки, кольцо прогресса, свайп для удаления */
+/** Shared UI elements: SVG icons, progress ring, swipe to delete */
 import { h } from './dom.js';
 import { statusClass } from './calc.js';
 
@@ -13,7 +13,7 @@ export function svg(tag, attrs = {}, ...children) {
   return el;
 }
 
-/* ---------- Системные иконки (в духе SF Symbols) ---------- */
+/* ---------- System icons (SF Symbols style) ---------- */
 
 const PATHS = {
   plus: 'M12 5v14M5 12h14',
@@ -30,7 +30,7 @@ const PATHS = {
   close: 'M6 6l12 12M18 6L6 18',
 };
 
-/** Иконка-линия; size — в px */
+/** Line icon; size in px */
 export function icon(name, size = 20, extraClass = '') {
   return svg('svg', {
     class: `icon ${extraClass}`.trim(),
@@ -41,11 +41,11 @@ export function icon(name, size = 20, extraClass = '') {
   }, svg('path', { d: PATHS[name] }));
 }
 
-/* ---------- Кольцо прогресса ---------- */
+/* ---------- Progress ring ---------- */
 
 /**
- * Кольцо как в «Фитнесе»: доля value от target.
- * status — 'ok' | 'bad' | null (цель не задана — нейтральный цвет).
+ * Ring like in Apple Fitness: value as a fraction of target.
+ * status — 'ok' | 'bad' | null (no target set — neutral color).
  */
 export function ring({ value, target, status, size = 120, stroke = 12, children = [] }) {
   const r = (size - stroke) / 2;
@@ -72,26 +72,26 @@ export function ring({ value, target, status, size = 120, stroke = 12, children 
   );
 }
 
-/** Полоска прогресса */
+/** Progress bar */
 export function bar(value, target, kind, status) {
   const pct = target > 0 ? Math.min(100, (value / target) * 100) : 0;
   return h('div', { class: `bar bar--${kind} ${statusClass(status)}` },
     h('i', { style: `width:${pct}%` }));
 }
 
-/* ---------- Свайп влево для удаления (как в iOS) ---------- */
+/* ---------- Swipe left to delete (as in iOS) ---------- */
 
 const ACTION_WIDTH = 88;
 let openRow = null;
 
-// Тап в любом другом месте закрывает открытую строку
+// A tap anywhere else closes the open row
 document.addEventListener('pointerdown', (e) => {
   if (openRow && !openRow.el.contains(e.target)) openRow.close();
 }, true);
 
 /**
- * Строка списка со свайпом: возвращает <li> с content внутри и кнопкой «Удалить» под ним.
- * Свайп не начинается на полях ввода и кнопках управления (stepper, переключатель).
+ * Swipeable list row: returns an <li> with content inside and a "Delete" button beneath it.
+ * A swipe doesn't start on inputs or controls (stepper, segmented control).
  */
 export function swipeRow(content, onDelete, { label = 'Удалить', className = '' } = {}) {
   const action = h('button', { type: 'button', class: 'swipe__delete', onclick: () => onDelete() }, label);
@@ -106,7 +106,7 @@ export function swipeRow(content, onDelete, { label = 'Удалить', classNam
   let horizontal = false;
   let pointerId = null;
 
-  // Кнопка «Удалить» видна, только пока строка сдвинута, — иначе она может просвечивать при нажатии
+  // The "Delete" button is visible only while the row is shifted — otherwise it may show through on press
   const reveal = (on) => row.classList.toggle('is-revealed', on);
   content.addEventListener('transitionend', () => {
     if (!content.style.transform) reveal(false);
@@ -152,7 +152,7 @@ export function swipeRow(content, onDelete, { label = 'Удалить', classNam
     if (!horizontal) {
       if (Math.abs(mx) < 8 && Math.abs(my) < 8) return;
       if (Math.abs(my) > Math.abs(mx)) {
-        tracking = false; // вертикальная прокрутка — не наш жест
+        tracking = false; // vertical scroll — not our gesture
         return;
       }
       horizontal = true;
@@ -160,7 +160,7 @@ export function swipeRow(content, onDelete, { label = 'Удалить', classNam
     }
     dx = mx;
     let x = Math.min(0, base + dx);
-    if (x < -ACTION_WIDTH) x = -ACTION_WIDTH + (x + ACTION_WIDTH) / 3; // «резинка»
+    if (x < -ACTION_WIDTH) x = -ACTION_WIDTH + (x + ACTION_WIDTH) / 3; // rubber-band effect
     move(x, false);
   });
 
@@ -170,7 +170,7 @@ export function swipeRow(content, onDelete, { label = 'Удалить', classNam
     if (!horizontal) return;
     if (base + dx < -ACTION_WIDTH / 2) api.open();
     else api.close();
-    // После свайпа не считать отпускание пальца нажатием на строку
+    // After a swipe, don't treat lifting the finger as a tap on the row
     const swallow = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
     content.addEventListener('click', swallow, { capture: true, once: true });
     setTimeout(() => content.removeEventListener('click', swallow, { capture: true }), 0);
@@ -181,11 +181,11 @@ export function swipeRow(content, onDelete, { label = 'Удалить', classNam
   return row;
 }
 
-/* ---------- Нижние «листы» с действиями ---------- */
+/* ---------- Bottom action sheets ---------- */
 
 /**
- * Показать меню действий (action sheet). actions: [{ label, onClick, danger? }].
- * Закрывается по «Отмена» или тапу по фону.
+ * Show an action sheet. actions: [{ label, onClick, danger? }].
+ * Closes on "Cancel" or a tap on the backdrop.
  */
 export function actionSheet(title, actions) {
   const dialog = h('dialog', { class: 'action-sheet', autofocus: true, tabindex: '-1' });

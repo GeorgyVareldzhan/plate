@@ -12,7 +12,7 @@ registerView('products', showProducts);
 registerView('dishes', showDishes);
 registerView('dish', showDish);
 
-// Кнопки «Отмена» в модальных окнах
+// "Cancel" buttons in modal dialogs
 document.addEventListener('click', (e) => {
   const button = e.target.closest('[data-close]');
   if (button) button.closest('dialog')?.close();
@@ -34,7 +34,7 @@ try {
   alert('Не удалось открыть базу данных. Возможно, включён режим «Частный доступ».');
 }
 
-// Просим браузер не удалять данные при нехватке места
+// Ask the browser not to evict data when storage is low
 navigator.storage?.persist?.().catch(() => {});
 
 setupAutoUpdate();

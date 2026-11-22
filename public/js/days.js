@@ -1,4 +1,4 @@
-/** Экраны «Дни» и «День»: цели, приёмы пищи, граммовки и итоги */
+/** "Days" and "Day" screens: targets, meals, portions and totals */
 import { db } from './db.js';
 import {
   MACROS, EMPTY_TARGETS, portion, sumNutrition, targetStatus, statusClass,
@@ -16,7 +16,7 @@ const MAX_MEALS = 10;
 
 const MACRO_NAMES = { protein: 'Белки', fat: 'Жиры', carbs: 'Углеводы' };
 
-let current = null; // открытый день
+let current = null; // currently open day
 let productsById = new Map();
 
 const daysListEl = $('#days-list');
@@ -39,7 +39,7 @@ async function saveCurrent() {
   await db.put('days', current);
 }
 
-/** Сразу записать отложенные правки дня — например, перед перезагрузкой */
+/** Flush pending day edits immediately — e.g. before a reload */
 export function flushDay() {
   return saveSoon.flush();
 }
@@ -49,7 +49,7 @@ async function refreshProducts() {
   productsById = new Map(products.map((p) => [p.id, p]));
 }
 
-/* ---------- Даты ---------- */
+/* ---------- Dates ---------- */
 
 function todayIso(offsetDays = 0) {
   const d = new Date();
@@ -77,12 +77,12 @@ function dateTitle(iso) {
   return capitalize((date.getFullYear() === new Date().getFullYear() ? fmtShort : fmtShortYear).format(date));
 }
 
-/** Сначала новые даты, при равной дате — созданные позже */
+/** Newest dates first; for equal dates, the later-created first */
 const byDateDesc = (a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt;
 
 const allItems = (day) => day.meals.flatMap((m) => m.items);
 
-/* ---------- Инициализация ---------- */
+/* ---------- Initialization ---------- */
 
 export function initDays() {
   $('#days-add').addEventListener('click', createDay);
@@ -94,8 +94,8 @@ export function initDays() {
   });
   $('#day-more').addEventListener('click', openDayActions);
 
-  // В десктопных браузерах прозрачное поле даты само не открывает календарь
-  dateEl.addEventListener('click', () => { try { dateEl.showPicker(); } catch { /* iOS откроет сам */ } });
+  // In desktop browsers a transparent date input doesn't open the calendar by itself
+  dateEl.addEventListener('click', () => { try { dateEl.showPicker(); } catch { /* iOS opens it by itself */ } });
   dateEl.addEventListener('change', () => {
     if (!dateEl.value) {
       dateEl.value = current.date;
@@ -127,7 +127,7 @@ export function initDays() {
 
   document.addEventListener('visibilitychange', () => { if (document.hidden) saveSoon.flush(); });
 
-  // Нижняя панель итогов видна, только когда сводка ушла за экран
+  // The bottom totals bar is visible only when the summary has scrolled off screen
   new IntersectionObserver(([entry]) => {
     totalsEl.classList.toggle('is-visible', !entry.isIntersecting && document.body.dataset.view === 'day');
   }, { threshold: 0 }).observe(summaryEl);
@@ -136,8 +136,8 @@ export function initDays() {
 }
 
 /**
- * На iPhone клавиатура перекрывает fixed-элементы внизу экрана.
- * Сдвигаем панель итогов вверх, чтобы итог был виден, пока меняешь граммы.
+ * On iPhone the keyboard covers fixed elements at the bottom of the screen.
+ * Move the totals bar up so the total stays visible while editing grams.
  */
 function keepTotalsAboveKeyboard() {
   const vv = window.visualViewport;
@@ -150,7 +150,7 @@ function keepTotalsAboveKeyboard() {
   vv.addEventListener('scroll', update);
 }
 
-/* ---------- Список дней ---------- */
+/* ---------- Day list ---------- */
 
 export async function showDays() {
   await saveSoon.flush();
@@ -190,7 +190,7 @@ export async function showDays() {
   daysEmptyEl.hidden = days.length > 0;
 }
 
-/** Новый день: цели берутся из последнего дня, один пустой приём */
+/** New day: targets are taken from the latest day, with one empty meal */
 async function createDay() {
   const days = (await db.all('days')).sort(byDateDesc);
   const now = Date.now();
@@ -205,7 +205,7 @@ async function createDay() {
   go('day', day.id);
 }
 
-/* ---------- День ---------- */
+/* ---------- Day ---------- */
 
 export async function showDay(id) {
   const [day] = await Promise.all([db.get('days', id), refreshProducts()]);
@@ -237,7 +237,7 @@ function openDayActions() {
   ]);
 }
 
-/** Картинка с меню дня в системное меню «Поделиться» (синхронно — Safari требует жест пользователя) */
+/** Day menu image to the system share sheet (synchronous — Safari requires a user gesture) */
 function shareDay() {
   const date = capitalize(fmtFull.format(parseIso(current.date)));
   const canvas = renderDayImage({ day: current, productsById, date });
@@ -307,14 +307,14 @@ function removeMeal(index) {
   saveSoon();
 }
 
-/** Подсказка «Осталось / Перебор» по калориям */
+/** "Left / Over" calorie hint */
 function kcalHint(total, target) {
   if (!target) return '';
   const diff = target - total;
   return diff >= 0 ? `Осталось ${fmt0.format(diff)} ккал` : `Перебор ${fmt0.format(-diff)} ккал`;
 }
 
-/** Сводка вверху дня и компактная панель внизу */
+/** Summary at the top of the day and compact bar at the bottom */
 function renderTotals() {
   const t = sumNutrition(allItems(current), productsById);
   const targets = current.targets;
@@ -370,7 +370,7 @@ function renderTotals() {
   ));
 }
 
-/** Копия дня на сегодня: цели и приёмы с граммовками */
+/** Copy a day to today: targets and meals with portions */
 async function copyDay() {
   await saveSoon.flush();
   const now = Date.now();
@@ -395,7 +395,7 @@ async function deleteDay(day) {
   go('days');
 }
 
-/* ---------- Добавление продуктов и блюд ---------- */
+/* ---------- Adding products and dishes ---------- */
 
 async function pickFor(meal, index) {
   await saveSoon.flush();
@@ -408,7 +408,7 @@ async function pickFor(meal, index) {
       await refreshProducts();
       addItems(meal, [newItem(product)]);
     },
-    // Блюдо раскладывается на ингредиенты: дальше их граммы меняются как обычно
+    // A dish is expanded into ingredients: their grams can then be edited as usual
     onDish: (dish) => addItems(meal, dish.items.filter((i) => productsById.has(i.productId)).map((i) => ({ ...i }))),
   });
 }

@@ -1,18 +1,18 @@
-/** Переключение экранов и подсветка таббара */
+/** Screen switching and tab bar highlighting */
 
 const handlers = new Map();
 
-/** Текущий экран — чтобы вернуться на него после перезагрузки */
+/** Current screen — to return to it after a reload */
 export const currentView = { name: null, args: [] };
 
-// Экраны, которые не являются вкладками, подсвечивают родительскую вкладку
+// Screens that are not tabs highlight their parent tab
 const TAB_OF = { day: 'days', dish: 'dishes' };
 
 export function registerView(name, onShow) {
   handlers.set(name, onShow);
 }
 
-/** Показать экран. Обработчик может вернуть false, чтобы отменить переход. */
+/** Show a screen. The handler may return false to cancel the navigation. */
 export async function go(name, ...args) {
   const onShow = handlers.get(name);
   if (onShow && (await onShow(...args)) === false) return;

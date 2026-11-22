@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 
-  <!-- iOS: запуск как отдельное приложение с домашнего экрана -->
+  <!-- iOS: launch as a standalone app from the home screen -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -23,7 +23,7 @@
 <body>
   <main class="app">
 
-    <!-- ===== Список дней ===== -->
+    <!-- ===== Day list ===== -->
     <section id="view-days" class="view">
       <header class="navbar">
         <div class="brand">
@@ -45,7 +45,7 @@
       </div>
     </section>
 
-    <!-- ===== День ===== -->
+    <!-- ===== Day ===== -->
     <section id="view-day" class="view" hidden>
       <header class="navbar">
         <button type="button" id="day-back" class="nav-back">
@@ -57,7 +57,7 @@
         </button>
       </header>
 
-      <!-- Тап по заголовку открывает выбор даты: прозрачное поле даты лежит поверх -->
+      <!-- Tapping the title opens the date picker: a transparent date input sits on top -->
       <div class="date-title">
         <h1 id="day-title" class="large-title">Сегодня</h1>
         <p id="day-subtitle" class="date-title__sub"></p>
@@ -73,11 +73,11 @@
         Добавить приём
       </button>
 
-      <!-- Компактные итоги: появляются, когда сводка уходит за экран -->
+      <!-- Compact totals: appear when the summary scrolls off screen -->
       <div id="day-totals" class="totals-bar"></div>
     </section>
 
-    <!-- ===== Продукты ===== -->
+    <!-- ===== Products ===== -->
     <section id="view-products" class="view" hidden>
       <header class="navbar">
         <span></span>
@@ -96,7 +96,7 @@
       <p class="footnote footnote--center">Значения на 100 г в сухом / сыром виде</p>
     </section>
 
-    <!-- ===== Блюда ===== -->
+    <!-- ===== Dishes ===== -->
     <section id="view-dishes" class="view" hidden>
       <header class="navbar">
         <span></span>
@@ -116,7 +116,7 @@
       <p class="footnote">При добавлении блюда в приём его ингредиенты добавляются по отдельности — их граммы можно поправить, само блюдо не изменится.</p>
     </section>
 
-    <!-- ===== Блюдо ===== -->
+    <!-- ===== Dish ===== -->
     <section id="view-dish" class="view" hidden>
       <header class="navbar">
         <button type="button" id="dish-back" class="nav-back">
@@ -152,7 +152,7 @@
     </button>
   </nav>
 
-  <!-- Цели на день -->
+  <!-- Daily targets -->
   <dialog id="targets-dialog" autofocus tabindex="-1" class="sheet">
     <form id="targets-form" novalidate>
       <div class="sheet__head">
@@ -184,7 +184,7 @@
     </form>
   </dialog>
 
-  <!-- Карточка продукта -->
+  <!-- Product card -->
   <dialog id="product-dialog" autofocus tabindex="-1" class="sheet">
     <form id="product-form" novalidate>
       <div class="sheet__head">
@@ -241,7 +241,7 @@
     </form>
   </dialog>
 
-  <!-- Выбор продукта для приёма -->
+  <!-- Product picker for a meal -->
   <dialog id="picker" autofocus tabindex="-1" class="sheet sheet--tall">
     <div class="sheet__head">
       <button type="button" class="link" data-close>Отмена</button>

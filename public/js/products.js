@@ -1,4 +1,4 @@
-/** Экран «Продукты», карточка продукта и общие строки списка продуктов */
+/** "Products" screen, product card and shared product list rows */
 import { db } from './db.js';
 import { KCAL_PER_GRAM } from './calc.js';
 import { $, h, fmt0, num, toInput, macrosLine, plural } from './dom.js';
@@ -13,7 +13,7 @@ export async function loadProducts() {
   return products;
 }
 
-/** Поиск по словам: в названии должны быть все слова запроса, в любом порядке («bombbar кокос») */
+/** Word search: the name must contain all query words, in any order ("bombbar coconut") */
 export function matchesQuery(name, query) {
   const words = query.toLowerCase().replace(/ё/g, 'е').split(/[\s,]+/).filter(Boolean);
   const n = name.toLowerCase().replace(/ё/g, 'е');
@@ -24,14 +24,14 @@ export function filterProducts(query) {
   return query.trim() ? products.filter((p) => matchesQuery(p.name, query)) : products;
 }
 
-/** Название без бренда — внутри раздела этого бренда он и так в заголовке */
+/** Name without the brand — inside that brand's section it is already in the header */
 function nameInSection(name, section) {
   if (!section || !name.toLowerCase().startsWith(section.toLowerCase() + ' ')) return name;
   const rest = name.slice(section.length).replace(/^[\s,]+/, '');
   return rest.charAt(0).toUpperCase() + rest.slice(1);
 }
 
-/** Строка продукта: иконка, название, БЖУ, калории. section — раздел, в котором показана строка. */
+/** Product row: icon, name, macros, calories. section — the section the row is shown in. */
 export function productRow(product, onClick, { chevron = false, section = null } = {}) {
   const piece = product.pieceGrams ? ` · 1 шт ${fmt0.format(product.pieceGrams)} г` : '';
   return h('li', {},
@@ -48,8 +48,8 @@ export function productRow(product, onClick, { chevron = false, section = null }
 }
 
 /**
- * Список продуктов по разделам. При поиске — одним списком.
- * sections: дополнительные разделы сверху, например [['Недавние', [...]]].
+ * Product list by section. When searching — a single list.
+ * sections: extra sections on top, e.g. [['Recent', [...]]].
  */
 export function renderGrouped(container, list, makeRow, { searching = false, sections = [] } = {}) {
   const groups = [];
@@ -67,7 +67,7 @@ export function renderGrouped(container, list, makeRow, { searching = false, sec
   ]).filter(Boolean));
 }
 
-/* ---------- Список ---------- */
+/* ---------- List ---------- */
 
 const listEl = $('#products-list');
 const searchEl = $('#products-search');
@@ -96,7 +96,7 @@ async function editAndRefresh(product, prefill) {
   if (await openProductDialog(product, prefill)) await showProducts();
 }
 
-/* ---------- Карточка продукта ---------- */
+/* ---------- Product card ---------- */
 
 const dialog = $('#product-dialog');
 const form = $('#product-form');
@@ -112,11 +112,11 @@ const MACRO_NAMES = { protein: 'Белки', fat: 'Жиры', carbs: 'Углев
 let editing = null;
 let result = null;
 let resolveDialog = null;
-let chosenIcon = null; // null — иконка подбирается по названию
+let chosenIcon = null; // null — icon is matched by name
 
 /**
- * Открыть карточку продукта (product = null — новый).
- * Возвращает промис: сохранённый продукт, { deleted: true } или null при отмене.
+ * Open the product card (product = null — new product).
+ * Returns a promise: the saved product, { deleted: true }, or null on cancel.
  */
 export function openProductDialog(product = null, prefill = {}) {
   editing = product;
@@ -165,7 +165,7 @@ function buildIconGrid() {
     'aria-label': key,
     onclick: () => { chosenIcon = key; updateIcon(); },
   }, renderIcon(key));
-  // Сетка по разделам: заголовок раздела занимает всю строку
+  // Grid by section: the section title spans the full row
   iconGrid.replaceChildren(auto, ...ICON_GROUPS.flatMap(([title, icons]) => [
     h('p', { class: 'icon-grid__title' }, title),
     ...Object.keys(icons).map(option),
@@ -221,12 +221,12 @@ const macroValue = (key) => {
 const kcalFromMacros = () =>
   Math.round(Object.entries(KCAL_PER_GRAM).reduce((sum, [key, k]) => sum + macroValue(key) * k, 0));
 
-/** Подсказка в пустом поле калорий — расчёт по БЖУ */
+/** Placeholder in the empty calories field — computed from macros */
 function updateKcalHint() {
   form.elements.kcal.placeholder = String(kcalFromMacros());
 }
 
-/** Объект продукта или текст ошибки */
+/** Product object or error text */
 function readProduct() {
   const name = form.elements.name.value.trim();
   if (!name) return 'Укажите название';
@@ -252,13 +252,13 @@ function readProduct() {
     data.pieceGrams = piece;
   }
 
-  // Иконку храним, только если выбрана вручную и отличается от подобранной по названию
+  // Store the icon only if chosen manually and different from the name-matched one
   if (chosenIcon && chosenIcon !== classify(name).icon) data.icon = chosenIcon;
 
   return data;
 }
 
-/** Удалить продукт и убрать его из всех дней и блюд. false — пользователь передумал. */
+/** Delete a product and remove it from all days and dishes. false — the user changed their mind. */
 async function deleteProduct(product) {
   const [days, dishes] = await Promise.all([db.all('days'), db.all('dishes')]);
   const has = (items) => items.some((i) => i.productId === product.id);
