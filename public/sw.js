@@ -2,7 +2,7 @@
 
 // Bump the version whenever any app file changes — the old cache will be deleted
 // An open app reloads itself once the new version is installed (see js/update.js)
-const CACHE = 'calc-v72';
+const CACHE = 'calc-v73';
 
 const ASSETS = [
   './',
@@ -17,10 +17,12 @@ const ASSETS = [
   'js/i18n.js',
   'js/i18n/en.js',
   'js/i18n/icon-rules.ru.js',
+  'js/i18n/label-words.js',
   'js/i18n/ru.js',
   'js/i18n/search.ru.js',
   'js/icons.js',
   'js/itemrow.js',
+  'js/label.js',
   'js/nav.js',
   'js/picker.js',
   'js/products.js',

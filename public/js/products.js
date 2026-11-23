@@ -6,6 +6,7 @@ import { t, macrosLine, categoryLabel, LANGUAGES, getLanguage, saveLanguage } fr
 import { ICONS, ICON_GROUPS, CATEGORIES, iconTile, productCategory, classify, renderIcon } from './icons.js';
 import { icon, actionSheet } from './ui.js';
 import { normalizeSearch } from './i18n/search.ru.js';
+import { parseLabel } from './label.js';
 
 let products = [];
 
@@ -160,6 +161,7 @@ export function openProductDialog(product = null, prefill = {}) {
   titleEl.textContent = product ? t('product.title') : t('product.new');
   deleteBtn.hidden = !product;
   errorEl.hidden = true;
+  $('#product-paste-status').hidden = true;
 
   dialog.showModal();
   if (!product && !values.name) setTimeout(() => form.elements.name.focus(), 50);
@@ -228,12 +230,49 @@ function initDialog() {
     dialog.close();
   });
 
+  $('#product-paste').addEventListener('click', pasteFromLabel);
+
   deleteBtn.addEventListener('click', async () => {
     if (await deleteProduct(editing)) {
       result = { deleted: true };
       dialog.close();
     }
   });
+}
+
+/** Label text from the clipboard; if reading is not allowed, ask to paste it */
+async function readLabelText() {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (text.trim()) return text;
+  } catch { /* denied or unsupported — fall back to a prompt */ }
+  return prompt(t('product.pastePrompt')) ?? '';
+}
+
+/** Fill calories and macros from label text copied from a photo (iOS Live Text) */
+async function pasteFromLabel() {
+  const text = await readLabelText();
+  if (!text.trim()) return;
+  const found = parseLabel(text);
+  const keys = ['kcal', ...MACRO_KEYS].filter((key) => found[key] != null);
+  const status = $('#product-paste-status');
+  status.hidden = false;
+  status.classList.toggle('is-bad', !keys.length);
+  if (!keys.length) {
+    status.textContent = t('product.pasteNothing');
+    return;
+  }
+  for (const key of keys) {
+    const input = form.elements[key];
+    input.value = toInput(found[key]);
+    const row = input.closest('.form-row');
+    row.classList.remove('is-pasted');
+    void row.offsetWidth; // restart the highlight animation
+    row.classList.add('is-pasted');
+  }
+  updateKcalHint();
+  const names = { kcal: 'macro.kcal', protein: 'macro.protein', fat: 'macro.fat', carbs: 'macro.carbs' };
+  status.textContent = t('product.pasteFilled', { fields: keys.map((key) => t(names[key]).toLowerCase()).join(', ') });
 }
 
 const fieldValue = (key) => num(form.elements[key].value);

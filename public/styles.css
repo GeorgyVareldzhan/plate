@@ -978,3 +978,27 @@ input:focus-visible { outline: none; }
   .carry--minus { --carry: #ff9f0a; }
   .carry-badge { color: #ff9f0a; }
 }
+
+/* Section title with an action on the right: "PER 100 G … · Paste from label" */
+.group-title--action { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.group-title__btn {
+  flex: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--tint);
+  font: inherit;
+  font-size: 15px;
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+
+/* Result of pasting label text */
+.paste-status { color: var(--tint); }
+.paste-status.is-bad { color: var(--bad); }
+.form-row.is-pasted { animation: pasted 1.6s ease-out; }
+@keyframes pasted {
+  from { background: rgba(52, 199, 89, .22); }
+  to { background: transparent; }
+}

@@ -219,7 +219,10 @@
           </li>
         </ul>
 
-        <p class="group-title" data-i18n="product.per100">Per 100 g, dry / raw weight</p>
+        <div class="group-title group-title--action">
+          <span data-i18n="product.per100">Per 100 g, dry / raw weight</span>
+          <button type="button" id="product-paste" class="group-title__btn" data-i18n="product.paste">Paste from label</button>
+        </div>
         <ul class="group group--form">
           <li class="form-row">
             <span class="form-row__label" data-i18n="macro.kcal">Calories</span>
@@ -238,6 +241,7 @@
             <span class="form-row__input"><input name="carbs" type="text" inputmode="decimal" autocomplete="off" placeholder="0"><em data-i18n="unit.g">g</em></span>
           </li>
         </ul>
+        <p id="product-paste-status" class="footnote paste-status" role="status" hidden></p>
         <p class="footnote" data-i18n="product.kcalNote">Leave calories empty to calculate them from protein, fat and carbs.</p>
 
         <ul class="group group--form">
