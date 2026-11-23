@@ -981,6 +981,7 @@ input:focus-visible { outline: none; }
 
 /* Section title with an action on the right: "PER 100 G … · Paste from label" */
 .group-title--action { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.group-title__btn:disabled { opacity: .4; }
 .group-title__btn {
   flex: none;
   border: 0;

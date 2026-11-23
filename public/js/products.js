@@ -6,7 +6,8 @@ import { t, macrosLine, categoryLabel, LANGUAGES, getLanguage, saveLanguage } fr
 import { ICONS, ICON_GROUPS, CATEGORIES, iconTile, productCategory, classify, renderIcon } from './icons.js';
 import { icon, actionSheet } from './ui.js';
 import { normalizeSearch } from './i18n/search.ru.js';
-import { parseLabel } from './label.js';
+import { parseLabel, parseLabelCandidates } from './label.js';
+import { readLabelPhoto, releaseOcr } from './ocr.js';
 
 let products = [];
 
@@ -202,6 +203,7 @@ function initDialog() {
   buildIconGrid();
 
   dialog.addEventListener('close', () => {
+    releaseOcr();
     resolveDialog?.(result);
     resolveDialog = null;
   });
@@ -230,7 +232,16 @@ function initDialog() {
     dialog.close();
   });
 
-  $('#product-paste').addEventListener('click', pasteFromLabel);
+  $('#product-label').addEventListener('click', () => actionSheet(null, [
+    // The file picker must open within the tap, so the sheet's handler clicks the input directly
+    { label: t('product.labelPhoto'), onClick: () => $('#product-photo').click() },
+    { label: t('product.labelPaste'), onClick: pasteFromLabel },
+  ]));
+  $('#product-photo').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (file) await photoFromLabel(file);
+  });
 
   deleteBtn.addEventListener('click', async () => {
     if (await deleteProduct(editing)) {
@@ -249,17 +260,43 @@ async function readLabelText() {
   return prompt(t('product.pastePrompt')) ?? '';
 }
 
+/** Status line under the nutrition fields */
+function labelStatus(text, bad = false) {
+  const status = $('#product-paste-status');
+  status.hidden = false;
+  status.classList.toggle('is-bad', bad);
+  status.textContent = text;
+}
+
 /** Fill calories and macros from label text copied from a photo (iOS Live Text) */
 async function pasteFromLabel() {
   const text = await readLabelText();
   if (!text.trim()) return;
-  const found = parseLabel(text);
+  fillFromLabel(parseLabel(text), 'product.pasteNothing');
+}
+
+/** Recognize a label photo on the device and fill the fields */
+async function photoFromLabel(file) {
+  const button = $('#product-label');
+  button.disabled = true;
+  try {
+    const found = await readLabelPhoto(file, parseLabelCandidates, ({ stage, percent }) => {
+      labelStatus(t(stage === 'loading' ? 'product.ocrLoading' : 'product.ocrReading', { percent }));
+    });
+    if (dialog.open) fillFromLabel(found, 'product.photoNothing');
+  } catch (error) {
+    console.error(error);
+    labelStatus(t('product.ocrFailed'), true);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+/** Put the values found on a label into the form and highlight them */
+function fillFromLabel(found, nothingKey) {
   const keys = ['kcal', ...MACRO_KEYS].filter((key) => found[key] != null);
-  const status = $('#product-paste-status');
-  status.hidden = false;
-  status.classList.toggle('is-bad', !keys.length);
   if (!keys.length) {
-    status.textContent = t('product.pasteNothing');
+    labelStatus(t(nothingKey), true);
     return;
   }
   for (const key of keys) {
@@ -272,7 +309,7 @@ async function pasteFromLabel() {
   }
   updateKcalHint();
   const names = { kcal: 'macro.kcal', protein: 'macro.protein', fat: 'macro.fat', carbs: 'macro.carbs' };
-  status.textContent = t('product.pasteFilled', { fields: keys.map((key) => t(names[key]).toLowerCase()).join(', ') });
+  labelStatus(t('product.pasteFilled', { fields: keys.map((key) => t(names[key]).toLowerCase()).join(', ') }));
 }
 
 const fieldValue = (key) => num(form.elements[key].value);

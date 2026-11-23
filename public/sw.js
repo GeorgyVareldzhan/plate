@@ -2,7 +2,9 @@
 
 // Bump the version whenever any app file changes — the old cache will be deleted
 // An open app reloads itself once the new version is installed (see js/update.js)
-const CACHE = 'calc-v73';
+const CACHE = 'calc-v74';
+// Bump when the files in vendor/tesseract change
+const OCR_CACHE = 'plate-ocr-v1';
 
 const ASSETS = [
   './',
@@ -24,6 +26,7 @@ const ASSETS = [
   'js/itemrow.js',
   'js/label.js',
   'js/nav.js',
+  'js/ocr.js',
   'js/picker.js',
   'js/products.js',
   'js/seed.js',
@@ -50,7 +53,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE && k !== OCR_CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -58,6 +61,16 @@ self.addEventListener('activate', (event) => {
 // Cache-first: the app works fully offline
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
+  // Text recognition files: large and rarely needed — cached on first use, kept across versions
+  if (new URL(event.request.url).pathname.includes('/vendor/tesseract/')) {
+    event.respondWith(caches.open(OCR_CACHE).then((cache) => cache.match(event.request).then((hit) => hit
+      || fetch(event.request).then((response) => {
+        if (response.ok) cache.put(event.request, response.clone());
+        return response;
+      }))));
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request, { ignoreSearch: true }).then((cached) => {
