@@ -37,6 +37,7 @@ export const RULES = [
   // --- Ready meals (before meat and fish: "pork dumplings" are dumplings)
   ['readyMeals', 'dumpling', /пельмен|вареник|манты|хинкал|равиол|гедза|дамплинг/],
   ['readyMeals', 'pizza', /пицц/],
+  ['grains', 'bread', /^хлеб|булочк\S* для/],     // before "burger/toast": toast bread, burger buns
   ['readyMeals', 'burger', /бургер/],
   ['readyMeals', 'shawarma', /шаурм|шаверм|донер|гирос|кебаб/],
   ['readyMeals', 'sandwich', /бутерброд|сэндвич|сендвич|тост/],
@@ -57,7 +58,7 @@ export const RULES = [
   ['bakery', 'pancakes', /блин|оладь|оладуш|сырник|панкейк/],
   ['bakery', 'waffle', /вафл/],
   ['bakery', 'croissant', /круассан|слойк/],
-  ['bakery', 'baguette', /багет|чиабат/],
+  ['grains', 'baguette', /багет|чиабат/],          // bread, listed with the other breads
   ['bakery', 'bagel', /бублик|бейгл|баранк/],
   ['bakery', 'cupcake', /кекс|маффин|капкейк/],
   ['bakery', 'doughnut', /пончик|донат/],
