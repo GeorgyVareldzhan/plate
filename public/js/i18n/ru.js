@@ -119,8 +119,12 @@ export default {
   'picker.dishes': 'Блюда',
   'picker.frequent': 'Частые',
   'picker.timesUsed': { one: '{count} раз', few: '{count} раза', many: '{count} раз', other: '{count} раза' },
-  'picker.notFound': 'Ничего не найдено. Нажмите «Новый», чтобы создать «{query}».',
   'picker.ingredient': 'Ингредиент',
+
+  'search.all': 'Все',
+  'search.clear': 'Очистить',
+  'search.sections': 'Разделы',
+  'search.create': 'Создать продукт «{query}»',
 
   'dishes.title': 'Блюда',
   'dishes.new': 'Новое блюдо',

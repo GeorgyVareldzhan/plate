@@ -6,12 +6,15 @@ import { initDays, showDays, showDay } from './days.js';
 import { initDishes, showDishes, showDish } from './dishes.js';
 import { initPicker } from './picker.js';
 import { setupAutoUpdate, takeRestoredView } from './update.js';
+import { initScrollLock } from './scrolllock.js';
 
 registerView('days', showDays);
 registerView('day', showDay);
 registerView('products', showProducts);
 registerView('dishes', showDishes);
 registerView('dish', showDish);
+
+initScrollLock();
 
 // "Cancel" buttons in modal dialogs
 document.addEventListener('click', (e) => {

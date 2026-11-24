@@ -3,6 +3,7 @@
  * A dish is a template of products with portions. When added to a meal, its ingredients are copied
  * into the meal individually and can then be changed without touching the dish itself.
  */
+import { highlight } from './searchbar.js';
 import { db } from './db.js';
 import { sumNutrition } from './calc.js';
 import { $, h, fmt0, fmt1, debounce } from './dom.js';
@@ -65,13 +66,13 @@ function compositionLine(dish, byId) {
 }
 
 /** Dish row for lists (including the product picker) */
-export function dishRow(dish, byId, onClick, { chevron = false } = {}) {
+export function dishRow(dish, byId, onClick, { chevron = false, ranges = null } = {}) {
   const total = sumNutrition(dish.items, byId);
   return h('li', {},
     h('button', { type: 'button', class: 'row', onclick: onClick },
       iconTile({ name: dish.name, icon: dish.icon }),
       h('span', { class: 'row__body' },
-        h('span', { class: 'row__title' }, dishName(dish)),
+        h('span', { class: 'row__title' }, ...(dish.name ? highlight(dishName(dish), ranges) : [dishName(dish)])),
         h('span', { class: 'row__sub' }, compositionLine(dish, byId)),
       ),
       h('span', { class: 'row__value' }, `${fmt0.format(total.kcal)} ${t('unit.kcal')}`),

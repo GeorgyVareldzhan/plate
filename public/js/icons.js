@@ -89,7 +89,7 @@ export const CATEGORIES = [
   ['dairy', 210], ['grains', 38], ['bakery', 32], ['readyMeals', 18], ['vegetables', 110],
   ['greens', 95], ['fruits', 350], ['berries', 280], ['driedFruits', 30],
   ['nuts', 32], ['oilsSauces', 55], ['snacks', 20], ['sweets', 300],
-  ['Bombbar', 300], ['Snaq Fabriq', 300],
+  ['Bombbar', 300], ['Snaq Fabriq', 300], ['От Розумовича', 8],
   ['drinks', 260], ['other', 0],
 ];
 const HUE = Object.fromEntries(CATEGORIES);
@@ -125,6 +125,7 @@ export const productIcon = (product) => (product?.icon && ICONS[product.icon] ? 
 const BRANDS = [
   ['Bombbar', /bombbar/],
   ['Snaq Fabriq', /snaq fabriq/],
+  ['От Розумовича', /^от розумовича/],
 ];
 
 /** Category by product type (meat, sweets…) — determines the icon tile color */
@@ -132,6 +133,13 @@ function typeCategory(product) {
   const { category } = classify(product?.name ?? '');
   if (category !== 'other' || !product?.icon) return category;
   return ICON_CATEGORY[product.icon] ?? category;
+}
+
+/** Length of the brand prefix in a product name ("Bombbar …"), 0 for products without a brand */
+export function brandPrefixLength(name) {
+  const lower = name.toLowerCase();
+  const brand = BRANDS.find(([title, pattern]) => pattern.test(lower) && lower.startsWith(title.toLowerCase()));
+  return brand ? brand[0].length + 1 : 0;
 }
 
 /** Product list section: the brand for branded products, otherwise the type category */

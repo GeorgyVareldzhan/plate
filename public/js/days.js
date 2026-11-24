@@ -466,7 +466,7 @@ async function pickFor(meal, index) {
   openPicker({
     title: t('meal.title', { n: index + 1 }),
     dishes,
-    dishRow: (dish, onClick) => dishRow(dish, productsById, onClick),
+    dishRow: (dish, onClick, ranges) => dishRow(dish, productsById, onClick, { ranges }),
     onProduct: async (product) => {
       await refreshProducts();
       addItems(meal, [newItem(product)]);

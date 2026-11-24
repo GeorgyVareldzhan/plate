@@ -3,9 +3,12 @@ import { db } from './db.js';
 import { KCAL_PER_GRAM } from './calc.js';
 import { $, h, fmt0, num, toInput } from './dom.js';
 import { t, macrosLine, categoryLabel, LANGUAGES, getLanguage, saveLanguage } from './i18n.js';
-import { ICONS, ICON_GROUPS, CATEGORIES, iconTile, productCategory, classify, renderIcon } from './icons.js';
+import { ICONS, ICON_GROUPS, CATEGORIES, iconTile, productCategory, classify, renderIcon, brandPrefixLength } from './icons.js';
 import { icon, actionSheet } from './ui.js';
-import { normalizeSearch } from './i18n/search.ru.js';
+import { search } from './search.js';
+import { initSearchBar, renderChips, scrollToSection, highlight, initScrollSpy } from './searchbar.js';
+import { addRow } from './itemrow.js';
+import { usageStats } from './usage.js';
 import { parseLabel, parseLabelCandidates } from './label.js';
 import { readLabelPhoto, releaseOcr } from './ocr.js';
 
@@ -17,26 +20,54 @@ export async function loadProducts() {
   return products;
 }
 
-/** Word search: the name must contain all query words, in any order ("bombbar coconut") */
-export function matchesQuery(name, query) {
-  const words = normalizeSearch(query).split(/[\s,]+/).filter(Boolean);
-  const n = normalizeSearch(name);
-  return words.every((w) => n.includes(w));
+/**
+ * Ranked product search (see search.js): [{ item, ranges }], best first.
+ * usage — Map productId → { count }: products eaten more often rank higher.
+ */
+export function searchProducts(query, usage = new Map()) {
+  return search(products, query, {
+    prefixLength: (p) => brandPrefixLength(p.name),
+    usage: (p) => usage.get(p.id)?.count ?? 0,
+  });
 }
 
-export function filterProducts(query) {
-  return query.trim() ? products.filter((p) => matchesQuery(p.name, query)) : products;
+/** Section chips for search results: "All" and the sections that have matches, in list order */
+export function resultChips(results, extra = []) {
+  const counts = new Map();
+  for (const { item } of results) counts.set(productCategory(item), (counts.get(productCategory(item)) ?? 0) + 1);
+  return [
+    { id: 'all', label: t('search.all'), count: results.length + extra.reduce((n, c) => n + c.count, 0) },
+    ...extra,
+    ...CATEGORIES.filter(([id]) => counts.has(id)).map(([id]) => ({ id, label: categoryLabel(id), count: counts.get(id) })),
+  ];
 }
+
+/** Jump chips for the full list: one per non-empty section */
+export function sectionChips(list, extra = []) {
+  const present = new Set(list.map(productCategory));
+  return [...extra, ...CATEGORIES.filter(([id]) => present.has(id)).map(([id]) => ({ id, label: categoryLabel(id) }))];
+}
+
+/** Search result row: the section and how often it was eaten under the name */
+export function searchRow(product, ranges, usage, onClick) {
+  const section = productCategory(product);
+  const count = usage.get(product.id)?.count ?? 0;
+  const note = count ? `${categoryLabel(section)} · ${t('picker.timesUsed', { count })}` : categoryLabel(section);
+  return productRow(product, onClick, { section, note, ranges });
+}
+
+/** "Create product “…”" at the end of search results */
+export const createRow = (query, onClick) => h('ul', { class: 'group group--icons group--create' }, addRow(t('search.create', { query }), onClick));
 
 /** Name without the brand — inside that brand's section it is already in the header */
-function nameInSection(name, section) {
+export function nameInSection(name, section) {
   if (!section || !name.toLowerCase().startsWith(section.toLowerCase() + ' ')) return name;
   const rest = name.slice(section.length).replace(/^[\s,]+/, '');
   return rest.charAt(0).toUpperCase() + rest.slice(1);
 }
 
 /** Product row: icon, name, macros, calories. section — the section the row is shown in; note — extra text before the macros. */
-export function productRow(product, onClick, { chevron = false, section = null, note = null } = {}) {
+export function productRow(product, onClick, { chevron = false, section = null, note = null, ranges = null } = {}) {
   const piece = product.pieceGrams
     ? ` · ${t('products.piece', { pcs: t('unit.pcs'), grams: fmt0.format(product.pieceGrams), g: t('unit.g') })}`
     : '';
@@ -44,13 +75,20 @@ export function productRow(product, onClick, { chevron = false, section = null, 
     h('button', { type: 'button', class: 'row', onclick: onClick },
       iconTile(product),
       h('span', { class: 'row__body' },
-        h('span', { class: 'row__title' }, nameInSection(product.name, section)),
+        h('span', { class: 'row__title' }, ...titleWithHighlight(product.name, section, ranges)),
         h('span', { class: 'row__sub' }, note ? `${note} · ${macrosLine(product)}${piece}` : macrosLine(product) + piece),
       ),
       h('span', { class: 'row__value' }, `${fmt0.format(product.kcal)} ${t('unit.kcal')}`),
       chevron ? icon('chevronRight', 18, 'row__chevron') : null,
     ),
   );
+}
+
+/** Title shown in a section, with search matches highlighted (ranges are positions in the full name) */
+function titleWithHighlight(name, section, ranges) {
+  const title = nameInSection(name, section);
+  const offset = name.length - title.length;
+  return highlight(title, ranges?.map(([s, e]) => [s - offset, e - offset]));
 }
 
 /**
@@ -69,7 +107,7 @@ export function renderGrouped(container, list, makeRow, { searching = false, sec
     for (const [id, items] of byCategory) if (items.length) groups.push([id, items, categoryLabel(id)]);
   }
   container.replaceChildren(...groups.flatMap(([id, items, title]) => [
-    title ? h('p', { class: 'group-title' }, title) : null,
+    title ? h('p', { class: 'group-title', 'data-section': id }, title) : null,
     h('ul', { class: 'group group--icons' }, ...items.map((item) => makeRow(item, id))),
   ]).filter(Boolean));
 }
@@ -77,27 +115,55 @@ export function renderGrouped(container, list, makeRow, { searching = false, sec
 /* ---------- List ---------- */
 
 const listEl = $('#products-list');
-const searchEl = $('#products-search');
 const emptyEl = $('#products-empty');
+const searchBarEl = $('#products-searchbar');
+const chipsEl = searchBarEl.querySelector('.chips');
+
+let searchBar = null;
+let spy = null;
+let usage = new Map();
+let activeChip = 'all'; // section filter while searching
 
 export function initProducts() {
-  searchEl.addEventListener('input', render);
-  $('#products-add').addEventListener('click', () => editAndRefresh(null, { name: searchEl.value.trim() }));
+  searchBar = initSearchBar(searchBarEl, { scrollArea: document, onInput: () => { activeChip = 'all'; render(); } });
+  spy = initScrollSpy({
+    list: listEl, searchBar: searchBarEl, chips: chipsEl, scrollRoot: window, enabled: () => !searchBar.query(),
+  });
+  $('#products-add').addEventListener('click', () => editAndRefresh(null, { name: searchBar.query() }));
   initLanguageSwitch();
   initDialog();
 }
 
 export async function showProducts() {
-  await loadProducts();
+  [usage] = await Promise.all([usageStats(), loadProducts()]);
   render();
 }
 
 function render() {
-  const query = searchEl.value.trim();
-  const items = filterProducts(query);
-  renderGrouped(listEl, items, (p, section) => productRow(p, () => editAndRefresh(p), { chevron: true, section }), { searching: Boolean(query) });
-  emptyEl.hidden = items.length > 0;
-  emptyEl.textContent = products.length ? t('products.notFound', { query }) : t('products.empty');
+  const query = searchBar.query();
+  const edit = (p) => () => editAndRefresh(p);
+  if (!query) {
+    renderGrouped(listEl, products, (p, section) => productRow(p, edit(p), { chevron: true, section }));
+    renderChips(chipsEl, sectionChips(products), {
+      onPick: (id) => spy.follow(id, scrollToSection(listEl, searchBarEl, id, window)),
+    });
+    spy.refresh();
+    emptyEl.hidden = products.length > 0;
+    emptyEl.textContent = t('products.empty');
+    return;
+  }
+  const results = searchProducts(query, usage);
+  const chips = resultChips(results);
+  if (!chips.some((c) => c.id === activeChip)) activeChip = 'all';
+  const shown = activeChip === 'all' ? results : results.filter(({ item }) => productCategory(item) === activeChip);
+  renderChips(chipsEl, results.length ? chips : [], { active: activeChip, onPick: (id) => { activeChip = id; render(); } });
+  listEl.replaceChildren(
+    ...(shown.length ? [h('ul', { class: 'group group--icons' },
+      ...shown.map(({ item, ranges }) => searchRow(item, ranges, usage, edit(item))))] : []),
+    createRow(query, () => editAndRefresh(null, { name: query })),
+  );
+  emptyEl.hidden = results.length > 0;
+  emptyEl.textContent = t('products.notFound', { query });
 }
 
 async function editAndRefresh(product, prefill) {
