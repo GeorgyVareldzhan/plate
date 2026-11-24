@@ -471,17 +471,35 @@ async function pickFor(meal, index) {
       await refreshProducts();
       addItems(meal, [newItem(product)]);
     },
-    // A dish is expanded into ingredients: their grams can then be edited as usual
-    onDish: (dish) => addItems(meal, dish.items.filter((i) => productsById.has(i.productId)).map((i) => ({ ...i }))),
+    // A dish is expanded into ingredients: their grams can then be edited as usual.
+    // Ingredients already in the meal get the grams added, so a dish added twice doubles its portions.
+    onDish: (dish) => addItems(meal, dish.items.filter((i) => productsById.has(i.productId)).map((i) => ({ ...i })), { merge: true }),
   });
 }
 
-function addItems(meal, items) {
-  meal.items.push(...items);
+/**
+ * Add items to a meal. merge — an item whose product is already in the meal adds its grams to
+ * that row (keeping the row's unit) instead of becoming a second row.
+ */
+function addItems(meal, items, { merge = false } = {}) {
+  const touched = new Set();
+  for (const item of items) {
+    const existing = merge ? meal.items.find((i) => i.productId === item.productId) : null;
+    if (existing) {
+      existing.grams = Math.round((existing.grams + item.grams) * 10) / 10;
+      touched.add(meal.items.indexOf(existing));
+    } else {
+      meal.items.push(item);
+      touched.add(meal.items.length - 1);
+    }
+  }
   const mealIndex = current.meals.indexOf(meal);
   renderMeals();
   renderTotals();
   saveSoon();
   const rows = mealsEl.children[mealIndex]?.querySelectorAll('.swipe');
-  rows?.[rows.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  if (!rows) return;
+  // Highlight the rows that were added or got more grams
+  for (const index of touched) rows[index]?.classList.add('is-updated');
+  rows[Math.max(...touched)]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }

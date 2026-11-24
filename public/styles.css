@@ -1069,3 +1069,6 @@ input:focus-visible { outline: none; }
 
 /* Matched part of a name in search results */
 mark.hl { background: none; color: inherit; font-weight: 700; }
+
+/* Meal rows just added or increased by adding a dish */
+.swipe.is-updated .swipe__content { animation: pasted 1.6s ease-out; }

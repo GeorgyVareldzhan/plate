@@ -2,7 +2,7 @@
 
 // Bump the version whenever any app file changes — the old cache will be deleted
 // An open app reloads itself once the new version is installed (see js/update.js)
-const CACHE = 'calc-v85';
+const CACHE = 'calc-v86';
 // Bump when the files in vendor/tesseract change
 const OCR_CACHE = 'plate-ocr-v1';
 
