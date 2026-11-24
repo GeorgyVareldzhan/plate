@@ -19,7 +19,7 @@
  * Values per 100 g dry / raw, approximate (from reference tables).
  * pieceGrams — weight of one piece for piece-based products, otherwise null.
  */
-export const SEED_VERSION = 32;
+export const SEED_VERSION = 33;
 
 export const SEED_RENAMES = {
   'Рис белый': 'Рис',
@@ -105,6 +105,11 @@ export const SEED_PRODUCTS = [
   p('Утиное филе с кожей', 230, 17, 18, 0),
   p('Утиные ножки', 212, 17, 16, 0),
   p('Утка целиком (тушка)', 308, 16.5, 27, 0),
+  // Baked duck: per 100 g of cooked meat; the skin loses part of its fat
+  p('Утиное филе без кожи запечённое', 182, 25.5, 8.9, 0),
+  p('Утиное филе с кожей запечённое', 259, 24.3, 18, 0),
+  p('Утиные ножки запечённые', 240, 24, 16, 0),
+  p('Утка целиком запечённая', 337, 19, 28.4, 0),
 
   // Fish (raw)
   p('Минтай', 72, 15.9, 0.9, 0),
