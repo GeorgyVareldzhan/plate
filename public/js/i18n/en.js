@@ -51,6 +51,8 @@ export default {
   'meal.title': 'Meal {n}',
   'meal.delete': 'Delete meal {n}',
   'meal.deleteConfirm': 'Delete meal {n} with all its products?',
+  'meal.moveUp': 'Move meal up',
+  'meal.moveDown': 'Move meal down',
   'meal.addProduct': 'Add product',
 
   // Day summary

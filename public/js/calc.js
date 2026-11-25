@@ -58,6 +58,16 @@ export function targetStatus(key, value, target) {
     : (value >= target * (1 - TOLERANCE) ? 'ok' : 'bad');
 }
 
+/**
+ * Progress toward a "not less than" target that is not reached yet: 0…1 (colored from red
+ * through orange to green); null when reached or for other targets — the status color applies.
+ */
+export function targetProgress(key, value, target) {
+  if (TARGET_DIRECTION[key] !== 'min' || !(target > 0)) return null;
+  const share = value / (target * (1 - TOLERANCE));
+  return share >= 1 ? null : Math.max(0, share);
+}
+
 export const statusClass = (status) => (status ? `is-${status}` : '');
 
 /** ISO date (YYYY-MM-DD) shifted by a number of days */

@@ -1,17 +1,18 @@
 /** "Days" and "Day" screens: targets, meals, portions and totals */
 import { db } from './db.js';
 import {
-  MACROS, EMPTY_TARGETS, sumNutrition, targetStatus, statusClass, kcalTargets,
+  MACROS, EMPTY_TARGETS, sumNutrition, targetStatus, statusClass, kcalTargets, targetProgress,
 } from './calc.js';
 import { $, h, fmt0, num, toInput, debounce } from './dom.js';
 import { t, locale, macrosLine } from './i18n.js';
 import { loadProducts } from './products.js';
-import { icon, ring, bar, swipeRow, actionSheet } from './ui.js';
+import { icon, ring, bar, swipeRow, actionSheet, progressClass, progressStyle } from './ui.js';
 import { itemRow, addRow, newItem } from './itemrow.js';
 import { openPicker } from './picker.js';
 import { loadDishes, dishRow } from './dishes.js';
 import { renderDayImage, canvasToFile, shareFile } from './share.js';
 import { go } from './nav.js';
+import { sortableRow, onLongPress } from './reorder.js';
 
 const MAX_MEALS = 10;
 
@@ -20,6 +21,9 @@ const MACRO_NAMES = { protein: 'macro.protein', fat: 'macro.fat', carbs: 'macro.
 let current = null; // currently open day
 let otherDays = []; // the rest of the days — previous days set the calorie target with carry-over
 let productsById = new Map();
+let movingMeal = null; // index of the meal shown with up / down arrows
+
+const MEAL_HOLD_MS = 450;
 
 const daysListEl = $('#days-list');
 const daysEmptyEl = $('#days-empty');
@@ -226,6 +230,7 @@ export async function showDay(id) {
     return false;
   }
   current = day;
+  movingMeal = null;
   otherDays = days.filter((d) => d !== day);
   current.targets = { ...EMPTY_TARGETS, ...current.targets };
   if (!current.meals.length) current.meals.push({ items: [] });
@@ -269,6 +274,7 @@ function openTargets() {
 }
 
 function renderMeals() {
+  if (movingMeal !== null && movingMeal >= current.meals.length) movingMeal = null;
   mealsEl.replaceChildren(...current.meals.map(renderMeal));
   addMealBtn.hidden = current.meals.length >= MAX_MEALS;
 }
@@ -281,19 +287,30 @@ function renderMeal(meal, index) {
   };
   updateTotal();
 
+  const moving = movingMeal === index;
+  const arrow = (dir) => h('button', {
+    type: 'button',
+    class: 'section-head__btn section-head__btn--move',
+    'aria-label': t(dir < 0 ? 'meal.moveUp' : 'meal.moveDown'),
+    disabled: !current.meals[index + dir],
+    onclick: () => moveMeal(index, dir),
+  }, icon(dir < 0 ? 'arrowUp' : 'arrowDown', 20));
+  const head = h('div', { class: `section-head${moving ? ' is-moving' : ''}` },
+    h('h2', {}, t('meal.title', { n: index + 1 })),
+    total,
+    ...(moving ? [arrow(-1), arrow(1)] : [h('button', {
+      type: 'button',
+      class: 'section-head__btn',
+      'aria-label': t('meal.delete', { n: index + 1 }),
+      onclick: () => removeMeal(index),
+    }, icon('trash', 18))]),
+  );
+  if (current.meals.length > 1) onLongPress(head, MEAL_HOLD_MS, () => startMovingMeal(index), { ignore: 'button' });
+
   return h('section', { class: 'meal' },
-    h('div', { class: 'section-head' },
-      h('h2', {}, t('meal.title', { n: index + 1 })),
-      total,
-      h('button', {
-        type: 'button',
-        class: 'section-head__btn',
-        'aria-label': t('meal.delete', { n: index + 1 }),
-        onclick: () => removeMeal(index),
-      }, icon('trash', 18)),
-    ),
+    head,
     h('ul', { class: 'group group--icons' },
-      ...meal.items.map((item, i) => itemRow({
+      ...meal.items.map((item, i) => sortItem(itemRow({
         item,
         product: productsById.get(item.productId),
         onChange: () => {
@@ -307,10 +324,56 @@ function renderMeal(meal, index) {
           renderTotals();
           saveSoon();
         },
-      })),
+      }))),
       addRow(t('meal.addProduct'), () => pickFor(meal, index)),
     ),
   );
+}
+
+/** Product rows can be dragged within a meal and to another meal */
+function sortItem(row) {
+  sortableRow(row, {
+    lists: () => [...mealsEl.querySelectorAll('.meal > .group')],
+    onDrop: ({ fromList, fromIndex, toList, toIndex }) => {
+      const [item] = current.meals[fromList].items.splice(fromIndex, 1);
+      current.meals[toList].items.splice(toIndex, 0, item);
+      renderMeals();
+      renderTotals();
+      saveSoon();
+    },
+  });
+  return row;
+}
+
+/** Long press on a meal header shows up / down arrows; a tap anywhere else hides them */
+function startMovingMeal(index) {
+  movingMeal = index;
+  renderMeals();
+  const outside = (e) => {
+    if (e.target.closest('.section-head.is-moving')) return;
+    document.removeEventListener('pointerdown', outside, true);
+    if (movingMeal === null) return;
+    movingMeal = null;
+    renderMeals();
+  };
+  document.addEventListener('pointerdown', outside, true);
+}
+
+/** Swap the meal with its neighbour; sections slide to their new places */
+function moveMeal(index, dir) {
+  const to = index + dir;
+  if (!current.meals[to]) return;
+  const before = new Map(current.meals.map((m, i) => [m, mealsEl.children[i].getBoundingClientRect().top]));
+  [current.meals[index], current.meals[to]] = [current.meals[to], current.meals[index]];
+  movingMeal = to;
+  renderMeals();
+  current.meals.forEach((m, i) => {
+    const el = mealsEl.children[i];
+    const dy = before.get(m) - el.getBoundingClientRect().top;
+    if (dy) el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 220, easing: 'ease-out' });
+  });
+  mealsEl.children[to].querySelector('.section-head').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  saveSoon();
 }
 
 function removeMeal(index) {
@@ -398,14 +461,15 @@ function renderTotals() {
     }),
     h('div', { class: 'summary__macros' }, ...MACROS.map(([key]) => {
       const status = targetStatus(key, sum[key], targets[key]);
+      const progress = targetProgress(key, sum[key], targets[key]);
       return h('div', { class: 'macro' },
         h('div', { class: 'macro__head' },
           h('span', { class: 'macro__name' }, t(MACRO_NAMES[key])),
-          h('span', { class: `macro__val ${statusClass(status)}` },
+          h('span', { class: `macro__val ${progressClass(status, progress)}`, style: progressStyle(progress) },
             fmt0.format(sum[key]),
             h('small', {}, targets[key] ? ` / ${fmt0.format(targets[key])} ${t('unit.g')}` : ` ${t('unit.g')}`)),
         ),
-        bar(sum[key], targets[key], key, status),
+        bar(sum[key], targets[key], status, progress),
       );
     })),
     ...carryPanel(kcal),
@@ -426,7 +490,8 @@ function renderTotals() {
       ),
       h('div', { class: 'tb__macros' }, ...MACROS.map(([key, label]) => {
         const status = targetStatus(key, sum[key], targets[key]);
-        return h('span', { class: statusClass(status) }, `${t(label)} `, h('b', {}, fmt0.format(sum[key])),
+        const progress = targetProgress(key, sum[key], targets[key]);
+        return h('span', { class: progressClass(status, progress), style: progressStyle(progress) }, `${t(label)} `, h('b', {}, fmt0.format(sum[key])),
           targets[key] ? `/${fmt0.format(targets[key])}` : '');
       })),
     ),

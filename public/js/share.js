@@ -4,7 +4,7 @@
  * Drawn on a canvas and handed straight to the system share sheet. Everything runs synchronously in the
  * tap handler: Safari allows navigator.share() only right after a user gesture.
  */
-import { portion, sumNutrition, targetStatus } from './calc.js';
+import { portion, sumNutrition, targetStatus, targetProgress } from './calc.js';
 import { fmt0, fmt1 } from './dom.js';
 import { t, macrosLine } from './i18n.js';
 import { productIcon, renderIcon } from './icons.js';
@@ -24,7 +24,7 @@ const EMOJI_FONT = '"Apple Color Emoji", "Noto Color Emoji", "Segoe UI Emoji", s
 // Always light theme: the image must be readable in any messenger
 const C = {
   bg: '#f2f2f7', card: '#ffffff', text: '#000000', muted: '#6e6e73', sep: '#e5e5ea', tileBg: '#f2f2f7',
-  ok: '#248a3d', bad: '#ff3b30', neutral: '#000000', protein: '#5e5ce6', fat: '#ff9f0a', carbs: '#32ade6',
+  ok: '#248a3d', bad: '#ff3b30', neutral: '#000000',
 };
 
 const font = (size, weight = 400) => `${weight} ${size}px ${FONT}`;
@@ -68,6 +68,13 @@ function amountText(item, product) {
     return `${fmt1.format(item.grams / product.pieceGrams)} ${t('unit.pcs')} · ${grams}`;
   }
   return grams;
+}
+
+/** Red → orange → green as in the app (see progressStyle in ui.js) */
+function progressColor(progress) {
+  const stops = [[255, 59, 48], [201, 52, 0], [36, 138, 61]];
+  const [a, b, k] = progress < 0.5 ? [stops[0], stops[1], progress * 2] : [stops[1], stops[2], progress * 2 - 1];
+  return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * k)).join(',')})`;
 }
 
 const statusColor = (status) => (status === 'ok' ? C.ok : status === 'bad' ? C.bad : C.neutral);
@@ -152,14 +159,11 @@ export function renderDayImage({ day, productsById, date, kcalTarget }) {
   const colW = (CARD_W - 80) / 3;
   macros.forEach(([key, label], i) => {
     const x = CARD_X + 40 + i * colW;
-    ctx.fillStyle = C[key];
-    ctx.beginPath();
-    ctx.arc(x + 9, y + 160, 9, 0, Math.PI * 2);
-    ctx.fill();
     ctx.fillStyle = C.muted;
     ctx.font = font(28, 500);
-    ctx.fillText(label, x + 28, y + 170);
-    ctx.fillStyle = statusColor(targetStatus(key, sum[key], targets[key]));
+    ctx.fillText(label, x, y + 170);
+    const progress = targetProgress(key, sum[key], targets[key]);
+    ctx.fillStyle = progress == null ? statusColor(targetStatus(key, sum[key], targets[key])) : progressColor(progress);
     ctx.font = font(36, 700);
     const v = fmt0.format(sum[key]);
     ctx.fillText(v, x, y + 216);

@@ -2,6 +2,7 @@
 import { h } from './dom.js';
 import { statusClass } from './calc.js';
 import { t } from './i18n.js';
+import { isDragging } from './reorder.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -22,6 +23,8 @@ const PATHS = {
   chevronLeft: 'M15 5l-7 7 7 7',
   chevronRight: 'M9 5l7 7-7 7',
   chevronDown: 'M6 9l6 6 6-6',
+  arrowUp: 'M12 19V5M6 11l6-6 6 6',
+  arrowDown: 'M12 5v14M6 13l6 6 6-6',
   more: 'M5 12h.01M12 12h.01M19 12h.01',
   search: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4',
   trash: 'M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13',
@@ -73,11 +76,24 @@ export function ring({ value, target, status, size = 120, stroke = 12, children 
   );
 }
 
-/** Progress bar */
-export function bar(value, target, kind, status) {
+/** Progress bar; progress — on the way to a "not less than" target, see targetProgress */
+export function bar(value, target, status, progress = null) {
   const pct = target > 0 ? Math.min(100, (value / target) * 100) : 0;
-  return h('div', { class: `bar bar--${kind} ${statusClass(status)}` },
+  return h('div', { class: `bar ${progressClass(status, progress)}`, style: progressStyle(progress) },
     h('i', { style: `width:${pct}%` }));
+}
+
+/** Mix of two color variables: share 0 — `from`, 1 — `to` */
+const mix = (from, to, share) => `color-mix(in srgb, var(${to}) ${Math.round(share * 100)}%, var(${from}))`;
+
+/** Class and style for an element colored by target status, or red → orange → green by progress */
+export const progressClass = (status, progress) => (progress == null ? statusClass(status) : 'has-progress');
+export function progressStyle(progress) {
+  if (progress == null) return '';
+  const [text, fill] = progress < 0.5
+    ? [mix('--bad', '--warn', progress * 2), mix('--bad', '--warn-fill', progress * 2)]
+    : [mix('--warn', '--ok', progress * 2 - 1), mix('--warn-fill', '--ok-fill', progress * 2 - 1)];
+  return `--progress-text:${text};--progress-fill:${fill}`;
 }
 
 /* ---------- Swipe left to delete (as in iOS) ---------- */
@@ -148,6 +164,7 @@ export function swipeRow(content, onDelete, { label = t('action.delete'), classN
 
   content.addEventListener('pointermove', (e) => {
     if (!tracking || e.pointerId !== pointerId) return;
+    if (isDragging()) { tracking = false; return; }
     const mx = e.clientX - startX;
     const my = e.clientY - startY;
     if (!horizontal) {

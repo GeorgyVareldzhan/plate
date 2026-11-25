@@ -18,6 +18,8 @@
   --tint-fill: #34c759;     /* accent fills */
   --ok: #248a3d;
   --ok-fill: #34c759;
+  --warn: #c93400;          /* orange for text */
+  --warn-fill: #ff9f0a;
   --bad: #ff3b30;
   --kcal: #34c759;
   --protein: #5e5ce6;
@@ -58,6 +60,8 @@
     --tint-fill: #30d158;
     --ok: #30d158;
     --ok-fill: #30d158;
+    --warn: #ff9f0a;
+    --warn-fill: #ff9f0a;
     --bad: #ff453a;
     --kcal: #30d158;
     --protein: #7d7aff;
@@ -431,23 +435,11 @@ button.row:active, .row--tap:active { background: var(--row-active); }
   background: var(--bar-color);
   transition: width .5s var(--ease), background-color .3s;
 }
-.bar--protein { --bar-color: var(--protein); }
-.bar--fat { --bar-color: var(--fat); }
-.bar--carbs { --bar-color: var(--carbs); }
+.bar { --bar-color: var(--ok-fill); }
 .bar.is-bad { --bar-color: var(--bad); }
-
-.dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-right: 8px;
-  vertical-align: 1px;
-}
-.dot--kcal { background: var(--kcal); }
-.dot--protein { background: var(--protein); }
-.dot--fat { background: var(--fat); }
-.dot--carbs { background: var(--carbs); }
+/* On the way to a "not less than" target: red → orange → green, see progressStyle */
+.has-progress { color: var(--progress-text); }
+.bar.has-progress { --bar-color: var(--progress-fill); }
 
 /* ---------- Day summary ---------- */
 
@@ -713,6 +705,7 @@ button.row:active, .row--tap:active { background: var(--row-active); }
 .tb__macros b { font-weight: 600; color: var(--label); }
 .tb__macros .is-bad b { color: var(--bad); }
 .tb__macros .is-ok b { color: var(--ok); }
+.tb__macros .has-progress b { color: inherit; }
 
 /* ---------- Tab bar ---------- */
 
@@ -1072,3 +1065,31 @@ mark.hl { background: none; color: inherit; font-weight: 700; }
 
 /* Meal rows just added or increased by adding a dish */
 .swipe.is-updated .swipe__content { animation: pasted 1.6s ease-out; }
+
+/* ---------- Reordering ---------- */
+
+/* Long press must not select text or open the callout */
+.group .swipe__content, .section-head { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.group .swipe__content input { -webkit-user-select: text; user-select: text; }
+.swipe.is-dragging {
+  z-index: 50;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .22), 0 2px 6px rgba(0, 0, 0, .12);
+  transform: scale(1.03);
+  transition: transform .15s var(--ease), box-shadow .15s;
+  pointer-events: none;
+}
+.swipe.is-dragging::before { display: none; }
+.drag-placeholder { background: var(--fill, rgba(120, 120, 128, .12)); }
+body.is-sorting { -webkit-user-select: none; user-select: none; }
+.section-head.is-moving h2 { color: var(--tint); }
+.section-head.is-moving {
+  margin-left: -8px;
+  margin-right: -8px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+.section-head__btn--move { color: var(--tint); margin: -4px 0; }
+.section-head__btn--move:disabled { color: var(--label-3, var(--label-2)); opacity: .35; }

@@ -12,6 +12,7 @@ import { loadProducts } from './products.js';
 import { iconTile } from './icons.js';
 import { swipeRow, actionSheet } from './ui.js';
 import { itemRow, addRow, newItem } from './itemrow.js';
+import { sortableRow } from './reorder.js';
 import { openPicker } from './picker.js';
 import { go } from './nav.js';
 
@@ -153,7 +154,7 @@ function changed() {
 
 function renderItems() {
   itemsEl.replaceChildren(
-    ...current.items.map((item, index) => itemRow({
+    ...current.items.map((item, index) => sortItem(itemRow({
       item,
       product: productsById.get(item.productId),
       onChange: changed,
@@ -162,7 +163,7 @@ function renderItems() {
         renderItems();
         changed();
       },
-    })),
+    }))),
     addRow(t('dish.addIngredient'), () => openPicker({
       title: t('picker.ingredient'),
       onProduct: async (product) => {
@@ -173,6 +174,20 @@ function renderItems() {
       },
     })),
   );
+}
+
+/** Ingredient rows can be dragged to change their order */
+function sortItem(row) {
+  sortableRow(row, {
+    lists: () => [itemsEl],
+    onDrop: ({ fromIndex, toIndex }) => {
+      const [item] = current.items.splice(fromIndex, 1);
+      current.items.splice(toIndex, 0, item);
+      renderItems();
+      saveSoon();
+    },
+  });
+  return row;
 }
 
 function renderSummary() {

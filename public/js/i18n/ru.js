@@ -44,6 +44,8 @@ export default {
   'meal.title': 'Приём {n}',
   'meal.delete': 'Удалить приём {n}',
   'meal.deleteConfirm': 'Удалить приём {n} вместе с продуктами?',
+  'meal.moveUp': 'Переместить приём выше',
+  'meal.moveDown': 'Переместить приём ниже',
   'meal.addProduct': 'Добавить продукт',
 
   'summary.left': 'Осталось {value} ккал',
