@@ -209,10 +209,10 @@ export async function showDays() {
     if (weeks.at(-1)?.start !== start) weeks.push({ start, days: [] });
     weeks.at(-1).days.push(day);
   }
-  daysListEl.replaceChildren(...weeks.flatMap((week) => [
+  daysListEl.replaceChildren(...weeks.map((week) => h('section', { class: 'week' },
     weekHead(week, kcalTarget),
     h('ul', { class: 'group' }, ...week.days.map(dayRow)),
-  ]));
+  )));
   daysListEl.hidden = days.length === 0;
   daysEmptyEl.hidden = days.length > 0;
 }
