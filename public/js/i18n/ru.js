@@ -29,6 +29,7 @@ export default {
   'days.meals': { one: '{count} приём', few: '{count} приёма', many: '{count} приёмов', other: '{count} приёма' },
   'days.empty': 'Пусто',
   'days.of': 'из {value}',
+  'days.weekAverage': 'в среднем',
 
   'day.today': 'Сегодня',
   'day.yesterday': 'Вчера',

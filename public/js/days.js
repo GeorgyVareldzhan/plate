@@ -1,7 +1,7 @@
 /** "Days" and "Day" screens: targets, meals, portions and totals */
 import { db } from './db.js';
 import {
-  MACROS, EMPTY_TARGETS, sumNutrition, targetStatus, statusClass, kcalTargets, targetProgress,
+  MACROS, EMPTY_TARGETS, sumNutrition, targetStatus, statusClass, kcalTargets, targetProgress, weekStart, shiftIso,
 } from './calc.js';
 import { $, h, fmt0, num, toInput, debounce } from './dom.js';
 import { t, locale, macrosLine } from './i18n.js';
@@ -173,7 +173,7 @@ export async function showDays() {
   days.sort(byDateDesc);
   const kcalTarget = kcalTargets(days, productsById);
 
-  daysListEl.replaceChildren(...days.map((day) => {
+  const dayRow = (day) => {
     const total = sumNutrition(allItems(day), productsById);
     const meals = day.meals.filter((m) => m.items.length).length;
     const { target, carry } = kcalTarget(day);
@@ -200,9 +200,65 @@ export async function showDays() {
       ring({ value: total.kcal, target, status, size: 34, stroke: 5 }),
     );
     return swipeRow(content, () => deleteDay(day));
-  }));
+  };
+
+  // Days grouped by week (Monday to Sunday), latest week first
+  const weeks = [];
+  for (const day of days) {
+    const start = weekStart(day.date);
+    if (weeks.at(-1)?.start !== start) weeks.push({ start, days: [] });
+    weeks.at(-1).days.push(day);
+  }
+  daysListEl.replaceChildren(...weeks.flatMap((week) => [
+    weekHead(week, kcalTarget),
+    h('ul', { class: 'group' }, ...week.days.map(dayRow)),
+  ]));
   daysListEl.hidden = days.length === 0;
   daysEmptyEl.hidden = days.length > 0;
+}
+
+/** Average of the numbers, or null for an empty list */
+const average = (values) => (values.length ? values.reduce((a, b) => a + b, 0) / values.length : null);
+
+/**
+ * Week header: date range, daily averages over days with products — compared with the average
+ * of their targets — and the week's calorie balance against the targets.
+ */
+function weekHead(week, kcalTarget) {
+  const range = dateFormat({ day: 'numeric', month: 'long' })
+    .formatRange(parseIso(week.start), parseIso(shiftIso(week.start, 6)));
+  const filled = week.days.filter((d) => allItems(d).length).map((day) => ({
+    total: sumNutrition(allItems(day), productsById),
+    targets: { ...day.targets, kcal: kcalTarget(day).target },
+  }));
+  const top = h('div', { class: 'week-head__top' }, h('span', { class: 'week-head__title' }, range));
+  if (!filled.length) return h('div', { class: 'week-head' }, top);
+
+  const withTarget = filled.filter((d) => d.targets.kcal > 0);
+  if (withTarget.length) {
+    const balance = Math.round(withTarget.reduce((sum, d) => sum + d.total.kcal - d.targets.kcal, 0));
+    top.append(h('span', { class: `week-head__over ${balance > 0 ? 'is-bad' : 'is-ok'}` },
+      `${balance ? signed(balance) : '0'} ${t('unit.kcal')}`));
+  }
+
+  const value = (key) => {
+    const avg = average(filled.map((d) => d.total[key]));
+    const target = average(filled.map((d) => d.targets[key]).filter((v) => v > 0));
+    const progress = targetProgress(key, avg, target);
+    return { avg, target, cls: progressClass(targetStatus(key, avg, target), progress), style: progressStyle(progress) };
+  };
+  const kcal = value('kcal');
+  const stats = h('div', { class: 'week-head__stats' },
+    `${t('days.weekAverage')} `,
+    h('b', { class: kcal.cls }, fmt0.format(kcal.avg)),
+    kcal.target ? ` ${t('days.of', { value: fmt0.format(kcal.target) })}` : '',
+    ` ${t('unit.kcal')}`,
+    ...MACROS.flatMap(([key, label]) => {
+      const v = value(key);
+      return [` · ${t(label)} `, h('b', { class: v.cls, style: v.style }, fmt0.format(v.avg))];
+    }),
+  );
+  return h('div', { class: 'week-head' }, top, stats);
 }
 
 /** New day: targets are taken from the latest day, with one empty meal */

@@ -392,7 +392,19 @@ button.row:active, .row--tap:active { background: var(--row-active); }
 .day-row__kcal { text-align: right; font-variant-numeric: tabular-nums; }
 .day-row__kcal b { display: block; font-size: 15px; font-weight: 600; }
 .day-row__kcal small { font-size: 12px; color: var(--label-2); }
-#days-list { --sep-inset: 72px; }
+#days-list .group { --sep-inset: 72px; }
+
+/* Week header in the day list: dates, averages and the week's calorie balance */
+.week-head { margin: 26px 16px 7px; font-variant-numeric: tabular-nums; }
+.week-head:first-child { margin-top: 20px; }
+.week-head__top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.week-head__title { font-size: 13px; line-height: 18px; color: var(--label-2); }
+.week-head__over { font-size: 13px; line-height: 18px; font-weight: 600; white-space: nowrap; }
+.week-head__stats { margin-top: 2px; font-size: 13px; line-height: 18px; color: var(--label-2); }
+.week-head__stats b { font-weight: 600; color: var(--label); }
+.week-head__stats b.is-ok { color: var(--ok); }
+.week-head__stats b.is-bad { color: var(--bad); }
+.week-head__stats b.has-progress { color: var(--progress-text); }
 
 /* ---------- Ring and bars ---------- */
 

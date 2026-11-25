@@ -35,6 +35,7 @@ export default {
   'days.meals': { one: '{count} meal', other: '{count} meals' },
   'days.empty': 'Empty',
   'days.of': 'of {value}',
+  'days.weekAverage': 'average',
 
   // Day
   'day.today': 'Today',
