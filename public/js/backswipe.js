@@ -19,7 +19,7 @@ const EASE = 'cubic-bezier(.2, .8, .2, 1)';
 
 /** screens: { [view]: { parent: view, back: async () => {} } } */
 export function initBackSwipe(screens) {
-  const app = document.querySelector('.app');
+  const app = document.querySelector('main.app');
   let g = null; // current gesture
 
   const layers = () => [app, document.querySelector('#day-totals'), g.under];
@@ -74,43 +74,49 @@ export function initBackSwipe(screens) {
     cleanup();
   }
 
-  addEventListener('pointerdown', (e) => {
-    if (g || e.pointerType === 'mouse' || e.clientX > EDGE) return;
+  // Touch events, not pointer events: on iOS only a cancelled touchmove keeps Safari from taking
+  // the touch over (pointer events then just stop arriving mid-gesture)
+  addEventListener('touchstart', (e) => {
+    if (g || e.touches.length !== 1) return;
+    const { clientX, clientY } = e.touches[0];
+    if (clientX > EDGE) return;
     const screen = screens[currentView.name];
     if (!screen || document.querySelector('dialog[open]')) return;
-    g = { screen, startX: e.clientX, startY: e.clientY, id: e.pointerId, active: false, x: 0, velocity: 0, t: e.timeStamp };
-  }, true);
+    g = { screen, startX: clientX, startY: clientY, active: false, x: 0, velocity: 0, t: e.timeStamp };
+  }, { capture: true, passive: true });
 
-  addEventListener('pointermove', (e) => {
-    if (!g || g.finishing || e.pointerId !== g.id) return;
-    const mx = e.clientX - g.startX;
-    const my = e.clientY - g.startY;
+  addEventListener('touchmove', (e) => {
+    if (!g || g.finishing) return;
+    if (e.touches.length !== 1) { if (!g.active) g = null; return; }
+    const { clientX, clientY } = e.touches[0];
+    const mx = clientX - g.startX;
+    const my = clientY - g.startY;
     if (!g.active) {
-      if (Math.abs(mx) < SLOP && Math.abs(my) < SLOP) return;
       if (Math.abs(my) > Math.abs(mx) || mx < 0) { g = null; return; } // a scroll, not ours
+      e.preventDefault(); // claim the touch before Safari does
+      if (mx < SLOP) return;
       g.active = true;
       begin();
     }
+    e.preventDefault();
     const x = Math.max(0, mx);
     const dt = e.timeStamp - g.t;
     if (dt > 0) g.velocity = (x - g.x) / dt;
     g.x = x;
     g.t = e.timeStamp;
     place(x, false);
-  }, true);
+  }, { capture: true, passive: false });
 
   const end = (e) => {
-    if (!g || g.finishing || e.pointerId !== g.id) return;
+    if (!g || g.finishing) return;
     if (!g.active) { g = null; return; }
     // Lifting the finger after a swipe is not a tap on whatever is under it
+    if (e.cancelable) e.preventDefault();
     const swallow = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
     addEventListener('click', swallow, { capture: true, once: true });
-    setTimeout(() => removeEventListener('click', swallow, { capture: true }), 0);
-    release(e.type === 'pointercancel');
+    setTimeout(() => removeEventListener('click', swallow, { capture: true }), 300);
+    release(e.type === 'touchcancel');
   };
-  addEventListener('pointerup', end, true);
-  addEventListener('pointercancel', end, true);
-
-  // Keep the page from scrolling while the screen is being dragged
-  addEventListener('touchmove', (e) => { if (g?.active) e.preventDefault(); }, { passive: false });
+  addEventListener('touchend', end, true);
+  addEventListener('touchcancel', end, true);
 }
