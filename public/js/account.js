@@ -4,7 +4,6 @@ import { $ } from './dom.js';
 import { t, getLanguage } from './i18n.js';
 import { auth, firestore, signIn, signUp, resetPassword, logOut } from './firebase.js';
 import { db } from './db.js';
-import { migrateLocal } from './migrate.js';
 
 /* ---------- Sign in ---------- */
 
@@ -75,21 +74,15 @@ export function initAuth() {
 
 /* ---------- Account setup after sign-in ---------- */
 
-/**
- * Bring local data from the old on-device version, and give a brand-new account the starter dishes.
- * Runs on every start; does nothing once done.
- */
+/** Give a brand-new account the starter dishes. Runs on every start; does nothing once done. */
 export async function setupAccount() {
-  const migrated = await migrateLocal();
   if (db.get('meta', 'account')) return;
   const onServer = await db.fetchFromServer('meta', 'account');
   if (onServer !== null) return; // exists, or offline — try next time
-  if (!migrated) {
-    const now = Date.now();
-    const starters = (await db.fetchShared('starterDishes')).sort((a, b) => a.order - b.order);
-    db.batch(starters.map(({ id, order, ...dish }) => ({ put: 'dishes', value: { ...dish, createdAt: now, updatedAt: now } })));
-  }
-  db.put('meta', { id: 'account', createdAt: Date.now() });
+  const now = Date.now();
+  const starters = (await db.fetchShared('starterDishes')).sort((a, b) => a.order - b.order);
+  db.batch(starters.map(({ id, order, ...dish }) => ({ put: 'dishes', value: { ...dish, createdAt: now, updatedAt: now } })));
+  db.put('meta', { id: 'account', createdAt: now });
 }
 
 /* ---------- Account sheet ---------- */
