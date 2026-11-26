@@ -16,6 +16,9 @@ import { sortableRow } from './reorder.js';
 import { openPicker } from './picker.js';
 import { go } from './nav.js';
 
+/** Creating dishes is hidden for now (the code stays) */
+export const CAN_ADD_DISHES = false;
+
 let current = null; // currently open dish
 let productsById = new Map();
 
@@ -83,6 +86,8 @@ export function dishRow(dish, byId, onClick, { chevron = false, ranges = null } 
 }
 
 export function initDishes() {
+  $('#dishes-add').hidden = !CAN_ADD_DISHES;
+  $('#dishes-empty-add').hidden = !CAN_ADD_DISHES;
   $('#dishes-add').addEventListener('click', createDish);
   $('#dishes-empty-add').addEventListener('click', createDish);
   $('#dish-back').addEventListener('click', async () => {

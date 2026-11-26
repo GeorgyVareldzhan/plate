@@ -12,6 +12,9 @@ import { usageStats } from './usage.js';
 import { parseLabel, parseLabelCandidates } from './label.js';
 import { readLabelPhoto, releaseOcr } from './ocr.js';
 
+/** Adding products is hidden for now (the code stays): users pick from the shared catalog */
+export const CAN_ADD_PRODUCTS = false;
+
 let products = [];
 
 export async function loadProducts() {
@@ -57,7 +60,10 @@ export function searchRow(product, ranges, usage, onClick) {
 }
 
 /** "Create product “…”" at the end of search results */
-export const createRow = (query, onClick) => h('ul', { class: 'group group--icons group--create' }, addRow(t('search.create', { query }), onClick));
+/** "Create «query»" row under search results; nothing while adding products is hidden */
+export const createRow = (query, onClick) => (CAN_ADD_PRODUCTS
+  ? [h('ul', { class: 'group group--icons group--create' }, addRow(t('search.create', { query }), onClick))]
+  : []);
 
 /** Name without the brand — inside that brand's section it is already in the header */
 export function nameInSection(name, section) {
@@ -129,6 +135,7 @@ export function initProducts() {
   spy = initScrollSpy({
     list: listEl, searchBar: searchBarEl, chips: chipsEl, scrollRoot: window, enabled: () => !searchBar.query(),
   });
+  $('#products-add').hidden = !CAN_ADD_PRODUCTS;
   $('#products-add').addEventListener('click', () => editAndRefresh(null, { name: searchBar.query() }));
   initLanguageSwitch();
   initDialog();
@@ -160,7 +167,7 @@ function render() {
   listEl.replaceChildren(
     ...(shown.length ? [h('ul', { class: 'group group--icons' },
       ...shown.map(({ item, ranges }) => searchRow(item, ranges, usage, edit(item))))] : []),
-    createRow(query, () => editAndRefresh(null, { name: query })),
+    ...createRow(query, () => editAndRefresh(null, { name: query })),
   );
   emptyEl.hidden = results.length > 0;
   emptyEl.textContent = t('products.notFound', { query });

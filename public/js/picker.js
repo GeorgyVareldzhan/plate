@@ -5,7 +5,7 @@
 import { $, h } from './dom.js';
 import { t } from './i18n.js';
 import {
-  loadProducts, searchProducts, resultChips, sectionChips, searchRow, createRow, productRow, renderGrouped,
+  loadProducts, searchProducts, resultChips, sectionChips, searchRow, createRow, productRow, CAN_ADD_PRODUCTS, renderGrouped,
   openProductDialog, nameInSection,
 } from './products.js';
 import { productCategory } from './icons.js';
@@ -53,6 +53,7 @@ export function initPicker() {
   spy = initScrollSpy({
     list: listEl, searchBar: searchBarEl, chips: chipsEl, scrollRoot: dialog, enabled: () => !searchBar.query(),
   });
+  $('#picker-new').hidden = !CAN_ADD_PRODUCTS;
   $('#picker-new').addEventListener('click', () => createProduct(searchBar.query()));
 }
 
@@ -134,6 +135,6 @@ function render() {
       ...shown.map(({ item, ranges }) => searchRow(item, ranges, usage, () => pickProduct(item)))));
   }
   if (!results.length && !foundDishes.length) parts.push(h('p', { class: 'empty-note' }, t('products.notFound', { query })));
-  parts.push(createRow(query, () => createProduct(query)));
+  parts.push(...createRow(query, () => createProduct(query)));
   listEl.replaceChildren(...parts);
 }
