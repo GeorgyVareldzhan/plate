@@ -167,6 +167,27 @@ body[data-view="day"] .app { padding-bottom: calc(env(safe-area-inset-bottom) + 
 .skeleton__lines { flex: 1; display: grid; gap: 8px; }
 .skeleton__lines i { height: 12px; border-radius: 6px; }
 .skeleton__ring { flex: none; width: 34px; height: 34px; border-radius: 50%; }
+/* One skeleton per screen; the day list unless another screen is restored */
+.splash [data-for] { display: none; }
+.splash:not([data-view]) [data-for="days"],
+.splash[data-view="days"] [data-for="days"],
+.splash[data-view="day"] [data-for="day"],
+.splash[data-view="dish"] [data-for="dish"],
+.splash[data-view="dishes"] [data-for="dishes"],
+.splash[data-view="products"] [data-for="products"] { display: block; }
+.splash[data-view="day"] .skeleton__tabbar, .splash[data-view="dish"] .skeleton__tabbar { display: none; }
+.skeleton__tile--sm { width: 40px; height: 40px; }
+.skeleton__value { flex: none; width: 48px; height: 14px; border-radius: 7px; }
+.skeleton__summary { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; padding: 16px; margin-bottom: 12px; }
+.skeleton__bigring { width: 132px; height: 132px; border-radius: 50%; }
+.skeleton__bars { display: grid; gap: 10px; }
+.skeleton__bars i { height: 10px; border-radius: 5px; }
+.skeleton__bars i:nth-child(odd) { width: 45%; }
+.skeleton__summary + .skeleton__row { margin-bottom: 8px; }
+.skeleton__heading { width: 35%; height: 22px; border-radius: 8px; margin: 24px 0 10px; }
+.skeleton__search { height: 36px; border-radius: 10px; margin-bottom: 12px; }
+.skeleton__chips { display: flex; gap: 8px; }
+.skeleton__chips i { width: 72px; height: 30px; border-radius: 15px; }
 
 /* Loading indicator (ui.js spinner): spokes turn in 8 steps, like iOS */
 .spinner { flex: none; color: var(--label-2); stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; animation: spinner .8s steps(8) infinite; }

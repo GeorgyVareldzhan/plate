@@ -21,9 +21,10 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Skeleton of the day list until the data is loaded (app.js removes it); appears only if loading takes a while -->
+  <!-- Skeleton of the first screen until the data is loaded (app.js removes it); appears only if loading
+       takes a while. The screen restored after an update reload is picked by the script below -->
   <div id="splash" class="splash" aria-hidden="true">
-    <div class="app skeleton">
+    <div class="app skeleton" data-for="days">
       <div class="skeleton__nav"><span class="skeleton__brand"><i class="skeleton__logo"></i><i class="skeleton__line" style="width:72px"></i></span><span class="skeleton__brand"><i class="skeleton__dot"></i><i class="skeleton__dot"></i></span></div>
       <i class="skeleton__title"></i>
       <i class="skeleton__line" style="width:40%"></i>
@@ -40,8 +41,59 @@
         <li class="skeleton__row"><i class="skeleton__tile"></i><span class="skeleton__lines"><i style="width:45%"></i><i style="width:70%"></i></span><i class="skeleton__ring"></i></li>
       </ul>
     </div>
+    <div class="app skeleton" data-for="day">
+      <div class="skeleton__nav"><i class="skeleton__line" style="width:64px"></i><i class="skeleton__dot"></i></div>
+      <i class="skeleton__title"></i>
+      <i class="skeleton__line" style="width:55%"></i>
+      <div class="skeleton__group skeleton__summary"><i class="skeleton__bigring"></i><span class="skeleton__bars"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+      <div class="skeleton__group skeleton__row"><i class="skeleton__line" style="width:30%;margin:0"></i></div>
+      <i class="skeleton__heading"></i>
+      <ul class="skeleton__group">
+        <li class="skeleton__row"><i class="skeleton__tile skeleton__tile--sm"></i><span class="skeleton__lines"><i style="width:55%"></i><i style="width:35%"></i></span><i class="skeleton__value"></i></li>
+        <li class="skeleton__row"><i class="skeleton__tile skeleton__tile--sm"></i><span class="skeleton__lines"><i style="width:55%"></i><i style="width:35%"></i></span><i class="skeleton__value"></i></li>
+        <li class="skeleton__row"><i class="skeleton__tile skeleton__tile--sm"></i><span class="skeleton__lines"><i style="width:55%"></i><i style="width:35%"></i></span><i class="skeleton__value"></i></li>
+      </ul>
+    </div>
+    <div class="app skeleton" data-for="dish">
+      <div class="skeleton__nav"><i class="skeleton__line" style="width:64px"></i><i class="skeleton__dot"></i></div>
+      <i class="skeleton__title"></i>
+      <ul class="skeleton__group">
+        <li class="skeleton__row"><i class="skeleton__tile skeleton__tile--sm"></i><span class="skeleton__lines"><i style="width:55%"></i><i style="width:35%"></i></span><i class="skeleton__value"></i></li>
+        <li class="skeleton__row"><i class="skeleton__tile skeleton__tile--sm"></i><span class="skeleton__lines"><i style="width:55%"></i><i style="width:35%"></i></span><i class="skeleton__value"></i></li>
+        <li class="skeleton__row"><i class="skeleton__tile skeleton__tile--sm"></i><span class="skeleton__lines"><i style="width:55%"></i><i style="width:35%"></i></span><i class="skeleton__value"></i></li>
+        <li class="skeleton__row"><i class="skeleton__tile skeleton__tile--sm"></i><span class="skeleton__lines"><i style="width:55%"></i><i style="width:35%"></i></span><i class="skeleton__value"></i></li>
+      </ul>
+    </div>
+    <div class="app skeleton" data-for="dishes">
+      <div class="skeleton__nav"></div>
+      <i class="skeleton__title"></i>
+      <ul class="skeleton__group">
+        <li class="skeleton__row"><i class="skeleton__tile"></i><span class="skeleton__lines"><i style="width:50%"></i><i style="width:75%"></i></span></li>
+        <li class="skeleton__row"><i class="skeleton__tile"></i><span class="skeleton__lines"><i style="width:50%"></i><i style="width:75%"></i></span></li>
+        <li class="skeleton__row"><i class="skeleton__tile"></i><span class="skeleton__lines"><i style="width:50%"></i><i style="width:75%"></i></span></li>
+        <li class="skeleton__row"><i class="skeleton__tile"></i><span class="skeleton__lines"><i style="width:50%"></i><i style="width:75%"></i></span></li>
+      </ul>
+    </div>
+    <div class="app skeleton" data-for="products">
+      <div class="skeleton__nav"></div>
+      <i class="skeleton__title"></i>
+      <i class="skeleton__search"></i>
+      <div class="skeleton__chips"><i></i><i></i><i></i><i></i></div>
+      <i class="skeleton__line" style="width:25%"></i>
+      <ul class="skeleton__group">
+        <li class="skeleton__row"><i class="skeleton__tile skeleton__tile--sm"></i><span class="skeleton__lines"><i style="width:60%"></i><i style="width:40%"></i></span></li>
+        <li class="skeleton__row"><i class="skeleton__tile skeleton__tile--sm"></i><span class="skeleton__lines"><i style="width:60%"></i><i style="width:40%"></i></span></li>
+        <li class="skeleton__row"><i class="skeleton__tile skeleton__tile--sm"></i><span class="skeleton__lines"><i style="width:60%"></i><i style="width:40%"></i></span></li>
+        <li class="skeleton__row"><i class="skeleton__tile skeleton__tile--sm"></i><span class="skeleton__lines"><i style="width:60%"></i><i style="width:40%"></i></span></li>
+        <li class="skeleton__row"><i class="skeleton__tile skeleton__tile--sm"></i><span class="skeleton__lines"><i style="width:60%"></i><i style="width:40%"></i></span></li>
+        <li class="skeleton__row"><i class="skeleton__tile skeleton__tile--sm"></i><span class="skeleton__lines"><i style="width:60%"></i><i style="width:40%"></i></span></li>
+      </ul>
+    </div>
     <div class="skeleton skeleton__tabbar"><i class="skeleton__dot"></i><i class="skeleton__dot"></i><i class="skeleton__dot"></i></div>
   </div>
+  <script>
+    try { const v = JSON.parse(sessionStorage.getItem('restore-view')); if (v && v.name) document.getElementById('splash').dataset.view = v.name; } catch { /* the day list */ }
+  </script>
   <!--
     UI text is English by default and translated at startup (js/i18n.js):
     data-i18n — text content, data-i18n-aria — aria-label, data-i18n-placeholder — placeholder.
