@@ -215,6 +215,9 @@ let editing = null;
 let result = null;
 let resolveDialog = null;
 let chosenIcon = null; // null — icon is matched by name
+let openedWith = ''; // form state when the card opened — to tell if anything changed
+
+const formState = () => JSON.stringify([...new FormData(form).entries(), chosenIcon]);
 
 /**
  * Open the product card (product = null — new product).
@@ -248,6 +251,7 @@ export function openProductDialog(product = null, prefill = {}) {
   errorEl.hidden = true;
   $('#product-paste-status').hidden = true;
 
+  openedWith = readOnly ? null : formState();
   dialog.showModal();
   if (!product && !values.name) setTimeout(() => form.elements.name.focus(), 50);
   return new Promise((resolve) => { resolveDialog = resolve; });
@@ -285,6 +289,9 @@ function buildIconGrid() {
 
 function initDialog() {
   buildIconGrid();
+
+  // Pulled down with unsaved changes: ask before throwing them away
+  dialog.beforeSwipeClose = () => openedWith === null || formState() === openedWith || confirm(t('product.discardConfirm'));
 
   dialog.addEventListener('close', () => {
     releaseOcr();

@@ -208,6 +208,7 @@ export default {
   'iconGroup.other': 'Other',
 
   'action.close': 'Close',
+  'product.discardConfirm': 'Close without saving? Your changes will be lost.',
   'product.catalogNote': "From the shared catalog — it can't be changed here. You can create your own product instead.",
   'auth.text': 'Sign in to keep your days on all your devices',
   'auth.email': 'Email',

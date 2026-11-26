@@ -11,6 +11,7 @@ import { initPicker } from './picker.js';
 import { setupAutoUpdate, takeRestoredView } from './update.js';
 import { initScrollLock } from './scrolllock.js';
 import { initBackSwipe } from './backswipe.js';
+import { initSheetSwipe } from './sheetswipe.js';
 
 registerView('auth', () => {});
 registerView('days', showDays);
@@ -20,6 +21,7 @@ registerView('dishes', showDishes);
 registerView('dish', showDish);
 
 initScrollLock();
+initSheetSwipe();
 
 // "Cancel" buttons in modal dialogs
 document.addEventListener('click', (e) => {
