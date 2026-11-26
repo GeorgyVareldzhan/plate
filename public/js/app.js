@@ -1,13 +1,17 @@
 import { db } from './db.js';
 import { initLanguage, t } from './i18n.js';
-import { registerView, go } from './nav.js';
+import { registerView, go, refresh } from './nav.js';
+import { currentUser } from './firebase.js';
+import { initAuth, initAccount, setupAccount } from './account.js';
+import { isDragging } from './reorder.js';
 import { initProducts, showProducts } from './products.js';
-import { initDays, showDays, showDay } from './days.js';
-import { initDishes, showDishes, showDish } from './dishes.js';
+import { initDays, showDays, showDay, flushDay } from './days.js';
+import { initDishes, showDishes, showDish, flushDish } from './dishes.js';
 import { initPicker } from './picker.js';
 import { setupAutoUpdate, takeRestoredView } from './update.js';
 import { initScrollLock } from './scrolllock.js';
 
+registerView('auth', () => {});
 registerView('days', showDays);
 registerView('day', showDay);
 registerView('products', showProducts);
@@ -27,16 +31,38 @@ for (const button of document.querySelectorAll('.tabbar button')) {
 }
 
 try {
-  await db.open();
-  await initLanguage();
-  initProducts();
-  initDays();
-  initDishes();
-  initPicker();
-  await go(...(takeRestoredView() || ['days']));
+  initLanguage();
+  const user = await currentUser();
+  if (!user) {
+    initAuth();
+    await go('auth');
+  } else {
+    await db.start(user.uid);
+    await setupAccount();
+    initAccount();
+    initProducts();
+    initDays();
+    initDishes();
+    initPicker();
+    await go(...(takeRestoredView() || ['days']));
+    db.onRemoteChange(refreshSoon);
+  }
 } catch (error) {
   console.error(error);
   alert(t('app.dbError'));
+}
+
+// Data changed on another device: redraw the open screen unless the user is in the middle of something
+let refreshTimer = 0;
+function refreshSoon() {
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(async () => {
+    const busy = document.querySelector('dialog[open]') || isDragging()
+      || document.activeElement?.matches('input, textarea, select');
+    if (busy) return refreshSoon();
+    await Promise.all([flushDay(), flushDish()]); // keep edits not saved yet
+    refresh();
+  }, 500);
 }
 
 // Ask the browser not to evict data when storage is low

@@ -1,38 +1,17 @@
 /**
- * Starter product list — a snapshot that goes into the app database.
+ * Starter product list and dishes — the source the shared Firestore catalog was filled from
+ * (see upload-catalog.mjs).
  *
- * How to update the list on already installed copies:
- *   1. edit SEED_PRODUCTS;
- *   2. if you renamed a product, add an "old → new" pair to SEED_RENAMES,
- *      otherwise it will be duplicated rather than replaced in existing days
- *      (several old names may map to one new name);
- *   3. bump SEED_VERSION (and CACHE in sw.js so the app updates).
+ * The catalog now lives in Firestore: edit existing products in the Firebase console — changes
+ * reach every user, including past days. To add products here, append them and run the upload
+ * script: it creates only missing documents and never overwrites edits made in the console.
  *
- * On next launch the app reconciles the database with the list (see syncSeed in db.js):
- *   - products from the list are added or updated;
- *   - products removed from the list are deleted if not used in any day;
- *   - products added or modified in the app itself are left untouched.
- *
- * Starter dishes (SEED_DISHES) are updated the same way: a dish modified in the app is left untouched.
+ * Starter dishes (SEED_DISHES) are copied to every new account.
  * Ingredient — [product name from the list, quantity, unit label (pieces or grams)].
  *
  * Values per 100 g dry / raw, approximate (from reference tables).
  * pieceGrams — weight of one piece for piece-based products, otherwise null.
  */
-export const SEED_VERSION = 37;
-
-export const SEED_RENAMES = {
-  'Рис белый': 'Рис',
-  'Макароны из твёрдых сортов': 'Макароны',
-  'Кукуруза (початок)': 'Кукуруза консервированная',
-  'Горошек зелёный': 'Горошек консервированный',
-  'Масло растительное (подсолнечное)': 'Масло растительное',
-  'Масло подсолнечное': 'Масло растительное',
-  'Масло оливковое': 'Масло растительное',
-  'Утиная грудка без кожи': 'Утиное филе без кожи',
-  'Утиная грудка с кожей': 'Утиное филе с кожей',
-};
-
 // icon — a fixed icon key when the name alone doesn't tell the product type (brand names)
 const p = (name, kcal, protein, fat, carbs, pieceGrams = null, icon = null) => (
   icon ? { name, kcal, protein, fat, carbs, pieceGrams, icon } : { name, kcal, protein, fat, carbs, pieceGrams });

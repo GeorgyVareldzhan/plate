@@ -6,7 +6,7 @@
  * Do not rename keys: they are already saved on products on users' devices.
  *
  * If a product has no icon of its own, the icon and category are matched by name (RULES, top to bottom —
- * first match wins). So seed.js can be edited without thinking about icons, and new products get
+ * first match wins). So the catalog can be edited without thinking about icons, and new products get
  * a fitting image right away.
  *
  * Emoji up to Unicode 15.1 (iOS 17.4+). Newer ones (e.g. 🫜 from iOS 18.4) are not used:

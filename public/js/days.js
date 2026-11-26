@@ -3,7 +3,7 @@ import { db } from './db.js';
 import {
   MACROS, EMPTY_TARGETS, sumNutrition, targetStatus, statusClass, kcalTargets, targetProgress, weekStart, shiftIso,
 } from './calc.js';
-import { $, h, fmt0, num, toInput, debounce } from './dom.js';
+import { $, h, fmt0, fmt1, num, toInput, debounce } from './dom.js';
 import { t, locale, macrosLine } from './i18n.js';
 import { loadProducts } from './products.js';
 import { icon, ring, bar, swipeRow, actionSheet, progressClass, progressStyle } from './ui.js';
@@ -31,6 +31,8 @@ const titleEl = $('#day-title');
 const subtitleEl = $('#day-subtitle');
 const dateEl = $('#day-date');
 const summaryEl = $('#day-summary');
+const weightEl = $('#day-weight');
+const weightNoteEl = $('#day-weight-note');
 const mealsEl = $('#day-meals');
 const addMealBtn = $('#day-add-meal');
 const totalsEl = $('#day-totals');
@@ -101,6 +103,7 @@ export function initDays() {
     go('days');
   });
   $('#day-more').addEventListener('click', openDayActions);
+  weightEl.addEventListener('input', onWeightInput);
 
   // In desktop browsers a transparent date input doesn't open the calendar by itself
   dateEl.addEventListener('click', () => { try { dateEl.showPicker(); } catch { /* iOS opens it by itself */ } });
@@ -112,6 +115,7 @@ export function initDays() {
     current.date = dateEl.value;
     renderTitle();
     renderTotals();
+    renderWeightNote();
     saveSoon();
   });
 
@@ -292,9 +296,42 @@ export async function showDay(id) {
   if (!current.meals.length) current.meals.push({ items: [] });
 
   dateEl.value = current.date;
+  weightEl.value = current.weight != null ? toInput(current.weight) : '';
+  renderWeightNote();
   renderTitle();
   renderMeals();
   renderTotals();
+}
+
+/* ---------- Weight ---------- */
+
+const MIN_WEIGHT = 20;
+const MAX_WEIGHT = 400;
+
+/** Morning weight of the day; empty or out of range — not set */
+function onWeightInput() {
+  const value = num(weightEl.value);
+  if (Number.isFinite(value) && value >= MIN_WEIGHT && value <= MAX_WEIGHT) current.weight = Math.round(value * 10) / 10;
+  else delete current.weight;
+  renderWeightNote();
+  saveSoon();
+}
+
+/**
+ * The morning weight shows how the previous day went: the change since the previous morning.
+ * Shown only when the previous calendar day has a weight too.
+ */
+function renderWeightNote() {
+  const previous = otherDays.find((d) => d.date === shiftIso(current.date, -1) && d.weight != null);
+  const show = current.weight != null && previous;
+  weightNoteEl.hidden = !show;
+  if (!show) return;
+  const delta = Math.round((current.weight - previous.weight) * 10) / 10;
+  const value = `${delta < 0 ? '−' : delta > 0 ? '+' : ''}${fmt1.format(Math.abs(delta))}`;
+  weightNoteEl.replaceChildren(
+    h('b', { class: delta < 0 ? 'is-ok' : delta > 0 ? 'is-bad' : '' }, t('day.weightDelta', { value })),
+    ` ${t('day.weightDeltaNote')}`,
+  );
 }
 
 function renderTitle() {

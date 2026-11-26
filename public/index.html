@@ -28,15 +28,41 @@
   <main class="app">
 
     <!-- ===== Day list ===== -->
+    <!-- ===== Sign in ===== -->
+    <section id="view-auth" class="view" hidden>
+      <form id="auth-form" class="auth" novalidate>
+        <img class="empty-state__logo" src="icons/logo.svg" alt="" width="96" height="96">
+        <h1 class="empty-state__title">Plate</h1>
+        <p class="empty-state__text" data-i18n="auth.text">Sign in to keep your days on all your devices</p>
+        <ul class="group group--form auth__fields">
+          <li class="form-row">
+            <input name="email" class="form-row__full" type="email" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="Email" data-i18n-placeholder="auth.email" aria-label="Email" data-i18n-aria="auth.email">
+          </li>
+          <li class="form-row">
+            <input name="password" class="form-row__full" type="password" autocomplete="current-password" placeholder="Password" data-i18n-placeholder="auth.password" aria-label="Password" data-i18n-aria="auth.password">
+          </li>
+        </ul>
+        <p id="auth-error" class="error" role="alert" hidden></p>
+        <button type="submit" id="auth-submit" class="btn btn--filled btn--block" data-i18n="auth.signIn">Sign in</button>
+        <button type="button" id="auth-switch" class="link" data-i18n="auth.toSignUp">Create an account</button>
+        <button type="button" id="auth-reset" class="link" data-i18n="auth.forgot">Forgot password?</button>
+      </form>
+    </section>
+
     <section id="view-days" class="view">
       <header class="navbar">
         <div class="brand">
           <img class="brand__logo" src="icons/logo.svg" alt="" width="30" height="30">
           <span class="brand__name">Plate</span>
         </div>
-        <button type="button" id="days-add" class="nav-icon" aria-label="New day" data-i18n-aria="days.new">
-          <svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-        </button>
+        <span class="navbar__actions">
+          <button type="button" id="account-btn" class="nav-icon account-btn" aria-label="Account" data-i18n-aria="account.title">
+            <svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.5-6 8-6s7 2 8 6"/></svg>
+          </button>
+          <button type="button" id="days-add" class="nav-icon" aria-label="New day" data-i18n-aria="days.new">
+            <svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+        </span>
       </header>
       <h1 class="large-title" data-i18n="days.title">Days</h1>
 
@@ -69,6 +95,14 @@
       </div>
 
       <section id="day-summary" class="card summary" aria-live="polite"></section>
+
+      <ul class="group group--form weight">
+        <li class="form-row">
+          <label class="form-row__label" for="day-weight" data-i18n="day.weight">Morning weight</label>
+          <span class="form-row__input"><input id="day-weight" type="text" inputmode="decimal" autocomplete="off" placeholder="—"><em data-i18n="unit.kg">kg</em></span>
+        </li>
+      </ul>
+      <p id="day-weight-note" class="footnote" hidden></p>
 
       <div id="day-meals"></div>
 
@@ -165,6 +199,30 @@
     </button>
   </nav>
 
+  <!-- Account -->
+  <dialog id="account-dialog" autofocus tabindex="-1" class="sheet">
+    <div class="sheet__head">
+      <span></span>
+      <strong data-i18n="account.title">Account</strong>
+      <button type="button" class="link link--bold" data-close data-i18n="action.done">Done</button>
+    </div>
+    <div class="sheet__body">
+      <ul class="group">
+        <li class="row account__row">
+          <span class="row__body">
+            <span id="account-email" class="row__title"></span>
+            <span id="account-status" class="row__sub"></span>
+          </span>
+        </li>
+      </ul>
+      <ul class="group group--spaced">
+        <li><button type="button" id="account-reset" class="row row--add" data-i18n="account.resetPassword">Reset password</button></li>
+      </ul>
+      <p class="footnote" data-i18n="account.resetNote">We'll send a link to set a new password to your email.</p>
+      <button type="button" id="account-logout" class="btn btn--danger btn--block" data-i18n="account.logOut">Log out</button>
+    </div>
+  </dialog>
+
   <!-- Daily targets -->
   <dialog id="targets-dialog" autofocus tabindex="-1" class="sheet">
     <form id="targets-form" novalidate>
@@ -219,6 +277,7 @@
           <span class="product-hero__hint" data-i18n="product.iconHint">Tap to change the icon</span>
         </div>
         <div id="product-icons" class="icon-grid" role="listbox" aria-label="Icons" data-i18n-aria="product.icons" hidden></div>
+        <p id="product-catalog-note" class="footnote" data-i18n="product.catalogNote" hidden>From the shared catalog — it can't be changed here. You can create your own product instead.</p>
 
         <ul class="group group--form">
           <li class="form-row">

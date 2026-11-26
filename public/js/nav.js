@@ -31,3 +31,12 @@ export async function go(name, ...args) {
   }
   window.scrollTo(0, 0);
 }
+
+/** Redraw the current screen in place (data changed on another device) */
+export async function refresh() {
+  const onShow = handlers.get(currentView.name);
+  if (!onShow) return;
+  const y = window.scrollY;
+  await onShow(...currentView.args);
+  window.scrollTo(0, y);
+}

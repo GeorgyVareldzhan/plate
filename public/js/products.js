@@ -195,6 +195,9 @@ const form = $('#product-form');
 const titleEl = $('#product-title');
 const errorEl = $('#product-error');
 const deleteBtn = $('#product-delete');
+const submitBtn = form.querySelector('[type="submit"]');
+const labelBtn = $('#product-label');
+const catalogNote = $('#product-catalog-note');
 const iconBtn = $('#product-icon-btn');
 const iconGrid = $('#product-icons');
 
@@ -225,8 +228,16 @@ export function openProductDialog(product = null, prefill = {}) {
   iconGrid.hidden = true;
   iconBtn.setAttribute('aria-expanded', 'false');
 
+  // Catalog products are shared and edited only by the admin — the card is read-only
+  const readOnly = Boolean(product?.catalog);
+  for (const el of form.elements) if (!el.hasAttribute('data-close')) el.disabled = readOnly;
+  submitBtn.hidden = readOnly;
+  labelBtn.hidden = readOnly;
+  catalogNote.hidden = !readOnly;
+  dialog.querySelector('.product-hero__hint').hidden = readOnly;
+  form.querySelector('[data-close]').textContent = t(readOnly ? 'action.close' : 'action.cancel');
   titleEl.textContent = product ? t('product.title') : t('product.new');
-  deleteBtn.hidden = !product;
+  deleteBtn.hidden = !product || readOnly;
   errorEl.hidden = true;
   $('#product-paste-status').hidden = true;
 
@@ -441,16 +452,13 @@ async function deleteProduct(product) {
   if (!confirm(message)) return false;
 
   const keep = (items) => items.filter((i) => i.productId !== product.id);
-  await db.run(['products', 'days', 'dishes'], 'readwrite', (tx) => {
-    tx.objectStore('products').delete(product.id);
-    const now = Date.now();
-    for (const day of usedDays) {
-      for (const meal of day.meals) meal.items = keep(meal.items);
-      tx.objectStore('days').put({ ...day, updatedAt: now });
-    }
-    for (const dish of usedDishes) {
-      tx.objectStore('dishes').put({ ...dish, items: keep(dish.items), updatedAt: now });
-    }
-  });
+  const now = Date.now();
+  db.batch([
+    { delete: 'products', id: product.id },
+    ...usedDays.map((day) => ({
+      put: 'days', value: { ...day, meals: day.meals.map((m) => ({ ...m, items: keep(m.items) })), updatedAt: now },
+    })),
+    ...usedDishes.map((dish) => ({ put: 'dishes', value: { ...dish, items: keep(dish.items), updatedAt: now } })),
+  ]);
   return true;
 }

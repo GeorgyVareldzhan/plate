@@ -3,14 +3,13 @@
  *
  * English is the base language (i18n/en.js); other languages live next to it and fall back
  * to English for missing keys. On first launch the language is detected from the browser and
- * saved in the database (meta store, key 'language'), so it does not change on its own later.
+ * saved on the device (localStorage), so it does not change on its own later.
  *
  * Static markup is translated through attributes: data-i18n (text), data-i18n-aria (aria-label),
  * data-i18n-placeholder (placeholder). Code uses t(key, params).
  */
 import en from './i18n/en.js';
 import ru from './i18n/ru.js';
-import { db } from './db.js';
 import { setNumberLocale, fmt0, fmt1 } from './dom.js';
 
 const DICTIONARIES = { en, ru };
@@ -39,20 +38,22 @@ function apply(code) {
 }
 
 /** Load the saved language (or detect and save it on first launch) and apply it */
-export async function initLanguage() {
-  const saved = await db.get('meta', 'language');
-  if (saved?.value && DICTIONARIES[saved.value]) {
-    apply(saved.value);
-  } else {
-    apply(detectLanguage());
-    await db.put('meta', { key: 'language', value: language });
-  }
+export function initLanguage() {
+  const saved = readSaved();
+  apply(saved && DICTIONARIES[saved] ? saved : detectLanguage());
+  if (!saved) saveLanguage(language);
   translatePage();
 }
 
+const STORAGE_KEY = 'language';
+
+function readSaved() {
+  try { return localStorage.getItem(STORAGE_KEY); } catch { return null; }
+}
+
 /** Save the chosen language; the caller reloads the page so every screen re-renders */
-export async function saveLanguage(code) {
-  await db.put('meta', { key: 'language', value: code });
+export function saveLanguage(code) {
+  try { localStorage.setItem(STORAGE_KEY, code); } catch { /* private mode — detected again next time */ }
 }
 
 const pluralRules = {};

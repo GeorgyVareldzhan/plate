@@ -116,7 +116,7 @@ input { font: inherit; letter-spacing: inherit; }
     calc(env(safe-area-inset-bottom) + var(--tabbar-h) + 32px)
     calc(env(safe-area-inset-left) + var(--gutter));
 }
-body[data-view="day"] .tabbar, body[data-view="dish"] .tabbar { display: none; }
+body[data-view="day"] .tabbar, body[data-view="dish"] .tabbar, body[data-view="auth"] .tabbar { display: none; }
 body[data-view="day"] .app { padding-bottom: calc(env(safe-area-inset-bottom) + 100px); }
 
 /* Screens switch without animation, like iOS tabs: the layer animation made Safari
@@ -169,6 +169,20 @@ body[data-view="day"] .app { padding-bottom: calc(env(safe-area-inset-bottom) + 
   justify-content: center;
 }
 .nav-back { padding-left: 2px; }
+.navbar__actions { display: flex; }
+/* Unsaved changes (not yet on the server) */
+.account-btn { position: relative; }
+.account-btn.has-pending::after {
+  content: "";
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--warn-fill);
+  box-shadow: 0 0 0 2px var(--bg);
+}
 .nav-icon:active, .nav-back:active { opacity: .35; }
 
 .large-title {
@@ -1106,3 +1120,17 @@ body.is-sorting { -webkit-user-select: none; user-select: none; }
 }
 .section-head__btn--move { color: var(--tint); margin: -4px 0; }
 .section-head__btn--move:disabled { color: var(--label-3, var(--label-2)); opacity: .35; }
+
+/* ---------- Sign in ---------- */
+
+.auth { display: grid; justify-items: center; gap: 8px; padding: 48px 0 24px; text-align: center; }
+.auth__fields { width: 100%; text-align: left; }
+.auth .error { margin: 4px 0 0; justify-self: start; text-align: left; }
+.auth .btn { margin-top: 16px; }
+.account__row { cursor: default; }
+#product-catalog-note { margin: 0 16px 12px; }
+
+/* ---------- Weight ---------- */
+
+.weight { margin-top: 12px; }
+#day-weight-note b { font-weight: 600; }

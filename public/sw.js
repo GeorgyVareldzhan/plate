@@ -2,7 +2,7 @@
 
 // Bump the version whenever any app file changes — the old cache will be deleted
 // An open app reloads itself once the new version is installed (see js/update.js)
-const CACHE = 'calc-v92';
+const CACHE = 'calc-v94';
 // Bump when the files in vendor/tesseract change
 const OCR_CACHE = 'plate-ocr-v1';
 
@@ -10,12 +10,14 @@ const ASSETS = [
   './',
   'index.html',
   'styles.css',
+  'js/account.js',
   'js/app.js',
   'js/calc.js',
   'js/days.js',
   'js/dishes.js',
   'js/db.js',
   'js/dom.js',
+  'js/firebase.js',
   'js/i18n.js',
   'js/i18n/en.js',
   'js/i18n/icon-rules.ru.js',
@@ -25,6 +27,7 @@ const ASSETS = [
   'js/icons.js',
   'js/itemrow.js',
   'js/label.js',
+  'js/migrate.js',
   'js/nav.js',
   'js/scrolllock.js',
   'js/reorder.js',
@@ -34,7 +37,6 @@ const ASSETS = [
   'js/ocr.js',
   'js/picker.js',
   'js/products.js',
-  'js/seed.js',
   'js/share.js',
   'js/ui.js',
   'js/update.js',
@@ -44,6 +46,9 @@ const ASSETS = [
   'icons/apple-touch-icon.png',
   'icons/favicon-32.png',
   'icons/logo.svg',
+  'vendor/firebase/firebase-app.js',
+  'vendor/firebase/firebase-auth.js',
+  'vendor/firebase/firebase-firestore.js',
 ];
 
 self.addEventListener('install', (event) => {
@@ -66,6 +71,8 @@ self.addEventListener('activate', (event) => {
 // Cache-first: the app works fully offline
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  // Firebase and other services: straight to the network (the SDK handles offline itself)
+  if (new URL(event.request.url).origin !== self.location.origin) return;
 
   // Text recognition files: large and rarely needed — cached on first use, kept across versions
   if (new URL(event.request.url).pathname.includes('/vendor/tesseract/')) {

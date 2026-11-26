@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Shared product catalog: read by signed-in users, edited only from the console
+    match /catalog/{productId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+    // Dishes copied to a new account
+    match /starterDishes/{dishId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+    // Personal data: only the owner
+    match /users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
