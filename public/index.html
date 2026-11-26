@@ -21,6 +21,11 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- Shown until the data is loaded (app.js hides it); the spinner appears only if loading takes a while -->
+  <div id="splash" class="splash" aria-hidden="true">
+    <img src="icons/logo.svg" alt="" width="96" height="96">
+    <svg class="spinner" width="24" height="24" viewBox="0 0 24 24"><line x1="12" y1="3" x2="12" y2="7" transform="rotate(0 12 12)" opacity="0.125"/><line x1="12" y1="3" x2="12" y2="7" transform="rotate(45 12 12)" opacity="0.250"/><line x1="12" y1="3" x2="12" y2="7" transform="rotate(90 12 12)" opacity="0.375"/><line x1="12" y1="3" x2="12" y2="7" transform="rotate(135 12 12)" opacity="0.500"/><line x1="12" y1="3" x2="12" y2="7" transform="rotate(180 12 12)" opacity="0.625"/><line x1="12" y1="3" x2="12" y2="7" transform="rotate(225 12 12)" opacity="0.750"/><line x1="12" y1="3" x2="12" y2="7" transform="rotate(270 12 12)" opacity="0.875"/><line x1="12" y1="3" x2="12" y2="7" transform="rotate(315 12 12)" opacity="1.000"/></svg>
+  </div>
   <!--
     UI text is English by default and translated at startup (js/i18n.js):
     data-i18n — text content, data-i18n-aria — aria-label, data-i18n-placeholder — placeholder.

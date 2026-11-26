@@ -6,6 +6,9 @@ import { isDragging } from './reorder.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
+/** The user asked the system for less motion: skip decorative animations */
+export const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 export function svg(tag, attrs = {}, ...children) {
   const el = document.createElementNS(SVG_NS, tag);
   for (const [key, value] of Object.entries(attrs)) {
@@ -45,32 +48,56 @@ export function icon(name, size = 20, extraClass = '') {
   }, svg('path', { d: PATHS[name] }));
 }
 
+/* ---------- Loading indicator ---------- */
+
+/** Spinner like UIActivityIndicatorView: 8 spokes fading in turn (same markup as the splash in index.html) */
+export function spinner(size = 20) {
+  return svg('svg', { class: 'spinner', width: size, height: size, viewBox: '0 0 24 24', 'aria-hidden': 'true' },
+    ...Array.from({ length: 8 }, (_, i) => svg('line', {
+      x1: 12, y1: 3, x2: 12, y2: 7, transform: `rotate(${i * 45} 12 12)`, opacity: ((i + 1) / 8).toFixed(3),
+    })));
+}
+
 /* ---------- Progress ring ---------- */
 
 /**
  * Ring like in Apple Fitness: value as a fraction of target.
  * status — 'ok' | 'bad' | null (no target set — neutral color).
+ * from — value to animate from (e.g. 0 when a list appears), otherwise drawn as is.
  */
-export function ring({ value, target, status, size = 120, stroke = 12, children = [] }) {
+export function ring({ value, target, status, size = 120, stroke = 12, children = [], from = null }) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
-  const pct = target > 0 ? Math.min(1, Math.max(0, value / target)) : 0;
+  const share = (v) => (target > 0 ? Math.min(1, Math.max(0, v / target)) : 0);
+  const offset = (v) => (c * (1 - share(v))).toFixed(2);
   const center = size / 2;
+  const animate = from != null && share(from) !== share(value) && !reducedMotion();
+  const start = animate ? from : value;
+
+  const arc = svg('circle', {
+    class: 'ring__value',
+    cx: center,
+    cy: center,
+    r,
+    'stroke-width': stroke,
+    'stroke-dasharray': c.toFixed(2),
+    'stroke-dashoffset': offset(start),
+    transform: `rotate(-90 ${center} ${center})`,
+    opacity: share(start) > 0 || animate ? 1 : 0,
+  });
+  if (animate) {
+    arc.classList.add('ring__value--intro');
+    // Two frames: the start position must be painted before the transition can run
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      arc.style.strokeDashoffset = `${offset(value)}px`; // a CSS property, so the transition runs in Safari too
+      if (!share(value)) arc.setAttribute('opacity', 0);
+    }));
+  }
 
   return h('div', { class: `ring ${statusClass(status)}`, style: `--size:${size}px` },
     svg('svg', { width: size, height: size, viewBox: `0 0 ${size} ${size}`, 'aria-hidden': 'true' },
       svg('circle', { class: 'ring__track', cx: center, cy: center, r, 'stroke-width': stroke }),
-      svg('circle', {
-        class: 'ring__value',
-        cx: center,
-        cy: center,
-        r,
-        'stroke-width': stroke,
-        'stroke-dasharray': c.toFixed(2),
-        'stroke-dashoffset': (c * (1 - pct)).toFixed(2),
-        transform: `rotate(-90 ${center} ${center})`,
-        opacity: pct > 0 ? 1 : 0,
-      }),
+      arc,
     ),
     children.length ? h('div', { class: 'ring__center' }, ...children) : null,
   );

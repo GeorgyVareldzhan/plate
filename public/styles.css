@@ -122,6 +122,27 @@ body[data-view="day"] .app { padding-bottom: calc(env(safe-area-inset-bottom) + 
 /* Screens switch without animation, like iOS tabs: the layer animation made Safari
    repaint hairline separators after it finished — the lines flickered */
 
+/* Startup splash: blank at first; the logo and spinner fade in only if loading takes a while */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 32px;
+  background: var(--bg);
+  transition: opacity .3s var(--ease);
+}
+.splash.is-hidden { opacity: 0; pointer-events: none; }
+.splash > * { opacity: 0; animation: fade-in-forwards .3s .4s forwards; }
+.splash .spinner { animation: spinner .8s steps(8) infinite, fade-in-forwards .3s .4s forwards; }
+@keyframes fade-in-forwards { to { opacity: 1; } }
+
+/* Loading indicator (ui.js spinner): spokes turn in 8 steps, like iOS */
+.spinner { flex: none; color: var(--label-2); stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; animation: spinner .8s steps(8) infinite; }
+@keyframes spinner { to { transform: rotate(360deg); } }
+
 /* Swipe back from the left edge (backswipe.js): the screen follows the finger
    over a copy of the parent screen */
 .back-under {
@@ -458,6 +479,9 @@ button.row:active, .row--tap:active { background: var(--row-active); }
   stroke-linecap: round;
   transition: stroke-dashoffset .5s var(--ease), stroke .3s;
 }
+.ring__value--intro { transition-duration: .8s, .3s; }
+/* Count-up when a day opens (days.js) is drawn frame by frame */
+.is-counting .ring__value, .is-counting .bar i { transition: none; }
 .ring__center {
   position: absolute;
   inset: 0;
@@ -1038,6 +1062,7 @@ input:focus-visible { outline: none; }
 /* Result of pasting label text */
 .paste-status { color: var(--tint); }
 .paste-status.is-bad { color: var(--bad); }
+.paste-status.is-busy { display: flex; align-items: center; gap: 8px; }
 .form-row.is-pasted { animation: pasted 1.6s ease-out; }
 @keyframes pasted {
   from { background: rgba(52, 199, 89, .22); }

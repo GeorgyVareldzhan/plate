@@ -58,6 +58,15 @@ try {
   console.error(error);
   alert(t('app.dbError'));
 }
+hideSplash();
+
+/** Fade out the startup screen once the first screen is drawn */
+function hideSplash() {
+  const splash = document.querySelector('#splash');
+  splash.classList.add('is-hidden');
+  splash.addEventListener('transitionend', () => splash.remove(), { once: true });
+  setTimeout(() => splash.remove(), 600); // no transition (reduced motion, hidden tab)
+}
 
 // Data changed on another device: redraw the open screen unless the user is in the middle of something
 let refreshTimer = 0;

@@ -6,12 +6,12 @@ import {
 import { $, h, fmt0, fmt1, num, toInput, debounce } from './dom.js';
 import { t, locale, macrosLine } from './i18n.js';
 import { loadProducts } from './products.js';
-import { icon, ring, bar, swipeRow, actionSheet, progressClass, progressStyle } from './ui.js';
+import { icon, ring, bar, swipeRow, actionSheet, progressClass, progressStyle, reducedMotion } from './ui.js';
 import { itemRow, addRow, newItem } from './itemrow.js';
 import { openPicker } from './picker.js';
 import { loadDishes, dishRow } from './dishes.js';
 import { renderDayImage, canvasToFile, shareFile } from './share.js';
-import { go } from './nav.js';
+import { go, currentView } from './nav.js';
 import { sortableRow, onLongPress } from './reorder.js';
 
 const MAX_MEALS = 10;
@@ -26,6 +26,7 @@ let movingMeal = null; // index of the meal shown with up / down arrows
 const MEAL_HOLD_MS = 450;
 
 const daysListEl = $('#days-list');
+let shownKcal = new Map(); // day id → calories its ring showed last time
 const daysEmptyEl = $('#days-empty');
 const titleEl = $('#day-title');
 const subtitleEl = $('#day-subtitle');
@@ -176,6 +177,9 @@ export async function showDays() {
   const [days] = await Promise.all([db.all('days'), refreshProducts()]);
   days.sort(byDateDesc);
   const kcalTarget = kcalTargets(days, productsById);
+  // Rings fill from 0 when the list appears; back from a day (or redrawn) only changed days move
+  const fromZero = currentView.name !== 'day' && currentView.name !== 'days';
+  const shown = new Map();
 
   const dayRow = (day) => {
     const total = sumNutrition(allItems(day), productsById);
@@ -201,8 +205,9 @@ export async function showDays() {
         h('small', {}, target ? t('days.of', { value: fmt0.format(target) }) : t('unit.kcal'),
           Math.round(carry) ? h('span', { class: 'carry-badge' }, signed(Math.round(carry))) : null),
       ),
-      ring({ value: total.kcal, target, status, size: 34, stroke: 5 }),
+      ring({ value: total.kcal, target, status, size: 34, stroke: 5, from: fromZero ? 0 : (shownKcal.get(day.id) ?? 0) }),
     );
+    shown.set(day.id, total.kcal);
     return swipeRow(content, () => deleteDay(day));
   };
 
@@ -217,6 +222,7 @@ export async function showDays() {
     weekHead(week, kcalTarget),
     h('ul', { class: 'group' }, ...week.days.map(dayRow)),
   )));
+  shownKcal = shown;
   daysListEl.hidden = days.length === 0;
   daysEmptyEl.hidden = days.length > 0;
 }
@@ -300,7 +306,7 @@ export async function showDay(id) {
   renderWeightNote();
   renderTitle();
   renderMeals();
-  renderTotals();
+  animateTotals();
 }
 
 /* ---------- Weight ---------- */
@@ -531,15 +537,42 @@ function carryPanel(kcal) {
   return blocks;
 }
 
+const COUNT_UP_MS = 800;
+let countUp = 0; // animation frame of the summary filling up
+
+/** Summary fills from zero when a day opens: ring, numbers and bars with their colors on the way */
+function animateTotals() {
+  cancelAnimationFrame(countUp);
+  if (reducedMotion()) { renderTotals(); return; }
+  const start = performance.now();
+  const ease = (x) => 1 - (1 - x) ** 3;
+  const frame = (now) => {
+    const x = Math.min(1, (now - start) / COUNT_UP_MS);
+    drawTotals(ease(x));
+    if (x < 1) countUp = requestAnimationFrame(frame);
+  };
+  drawTotals(0);
+  countUp = requestAnimationFrame(frame);
+}
+
 /** Summary at the top of the day and compact bar at the bottom */
 function renderTotals() {
-  const sum = sumNutrition(allItems(current), productsById);
+  cancelAnimationFrame(countUp);
+  drawTotals(1);
+}
+
+/** shown — share of the totals drawn in the summary (count-up animation), hints always use the real ones */
+function drawTotals(shown) {
+  const real = sumNutrition(allItems(current), productsById);
+  const sum = shown === 1 ? real : Object.fromEntries(Object.entries(real).map(([k, v]) => [k, v * shown]));
   const kcal = currentKcalTarget();
   const targets = { ...current.targets, kcal: kcal.target };
   const kcalStatus = targetStatus('kcal', sum.kcal, targets.kcal);
-  const hint = kcalHint(sum.kcal, targets.kcal);
+  const realStatus = targetStatus('kcal', real.kcal, targets.kcal);
+  const hint = kcalHint(real.kcal, targets.kcal);
 
   summaryEl.classList.toggle('summary--empty', !targets.kcal);
+  summaryEl.classList.toggle('is-counting', shown < 1);
   summaryEl.replaceChildren(
     ring({
       value: sum.kcal,
@@ -567,24 +600,25 @@ function renderTotals() {
     })),
     ...carryPanel(kcal),
     h('div', { class: 'summary__foot' },
-      h('span', { class: `summary__hint ${statusClass(kcalStatus)}` }, hint || t('summary.noTargets')),
+      h('span', { class: `summary__hint ${statusClass(realStatus)}` }, hint || t('summary.noTargets')),
       h('button', { type: 'button', class: 'summary__goals', onclick: openTargets },
         targets.kcal ? t('summary.targets') : t('summary.setTargets'), icon('chevronRight', 16)),
     ),
   );
 
+  if (shown < 1) return; // the bar at the bottom is hidden while the summary is on screen
   totalsEl.replaceChildren(h('div', { class: 'totals-bar__inner' },
-    ring({ value: sum.kcal, target: targets.kcal, status: kcalStatus, size: 40, stroke: 5 }),
+    ring({ value: real.kcal, target: targets.kcal, status: realStatus, size: 40, stroke: 5 }),
     h('div', { class: 'tb__body' },
       h('div', { class: 'tb__main' },
-        h('span', { class: `tb__kcal ${statusClass(kcalStatus)}` }, fmt0.format(sum.kcal)),
+        h('span', { class: `tb__kcal ${statusClass(realStatus)}` }, fmt0.format(real.kcal)),
         h('span', { class: 'muted' }, targets.kcal ? `/ ${fmt0.format(targets.kcal)} ${t('unit.kcal')}` : t('unit.kcal')),
-        h('span', { class: `tb__hint ${statusClass(kcalStatus)}` }, hint),
+        h('span', { class: `tb__hint ${statusClass(realStatus)}` }, hint),
       ),
       h('div', { class: 'tb__macros' }, ...MACROS.map(([key, label]) => {
-        const status = targetStatus(key, sum[key], targets[key]);
-        const progress = targetProgress(key, sum[key], targets[key]);
-        return h('span', { class: progressClass(status, progress), style: progressStyle(progress) }, `${t(label)} `, h('b', {}, fmt0.format(sum[key])),
+        const status = targetStatus(key, real[key], targets[key]);
+        const progress = targetProgress(key, real[key], targets[key]);
+        return h('span', { class: progressClass(status, progress), style: progressStyle(progress) }, `${t(label)} `, h('b', {}, fmt0.format(real[key])),
           targets[key] ? `/${fmt0.format(targets[key])}` : '');
       })),
     ),

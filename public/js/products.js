@@ -4,7 +4,7 @@ import { KCAL_PER_GRAM } from './calc.js';
 import { $, h, fmt0, num, toInput } from './dom.js';
 import { t, macrosLine, categoryLabel, LANGUAGES, getLanguage, saveLanguage } from './i18n.js';
 import { ICONS, ICON_GROUPS, CATEGORIES, iconTile, productCategory, classify, renderIcon, brandPrefixLength } from './icons.js';
-import { icon, actionSheet } from './ui.js';
+import { icon, actionSheet, spinner } from './ui.js';
 import { search } from './search.js';
 import { initSearchBar, renderChips, scrollToSection, highlight, initScrollSpy } from './searchbar.js';
 import { addRow } from './itemrow.js';
@@ -352,11 +352,12 @@ async function readLabelText() {
 }
 
 /** Status line under the nutrition fields */
-function labelStatus(text, bad = false) {
+function labelStatus(text, { bad = false, busy = false } = {}) {
   const status = $('#product-paste-status');
   status.hidden = false;
   status.classList.toggle('is-bad', bad);
-  status.textContent = text;
+  status.classList.toggle('is-busy', busy);
+  status.replaceChildren(...(busy ? [spinner(16)] : []), text);
 }
 
 /** Fill calories and macros from label text copied from a photo (iOS Live Text) */
@@ -372,12 +373,12 @@ async function photoFromLabel(file) {
   button.disabled = true;
   try {
     const found = await readLabelPhoto(file, parseLabelCandidates, ({ stage, percent }) => {
-      labelStatus(t(stage === 'loading' ? 'product.ocrLoading' : 'product.ocrReading', { percent }));
+      labelStatus(t(stage === 'loading' ? 'product.ocrLoading' : 'product.ocrReading', { percent }), { busy: true });
     });
     if (dialog.open) fillFromLabel(found, 'product.photoNothing');
   } catch (error) {
     console.error(error);
-    labelStatus(t('product.ocrFailed'), true);
+    labelStatus(t('product.ocrFailed'), { bad: true });
   } finally {
     button.disabled = false;
   }
@@ -387,7 +388,7 @@ async function photoFromLabel(file) {
 function fillFromLabel(found, nothingKey) {
   const keys = ['kcal', ...MACRO_KEYS].filter((key) => found[key] != null);
   if (!keys.length) {
-    labelStatus(t(nothingKey), true);
+    labelStatus(t(nothingKey), { bad: true });
     return;
   }
   for (const key of keys) {
