@@ -122,22 +122,51 @@ body[data-view="day"] .app { padding-bottom: calc(env(safe-area-inset-bottom) + 
 /* Screens switch without animation, like iOS tabs: the layer animation made Safari
    repaint hairline separators after it finished — the lines flickered */
 
-/* Startup splash: blank at first; the logo and spinner fade in only if loading takes a while */
+/* Startup skeleton of the day list: blank at first, fades in only if loading takes a while */
 .splash {
   position: fixed;
   inset: 0;
   z-index: 100;
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  gap: 32px;
+  overflow: hidden;
   background: var(--bg);
   transition: opacity .3s var(--ease);
 }
 .splash.is-hidden { opacity: 0; pointer-events: none; }
-.splash > * { opacity: 0; animation: fade-in-forwards .3s .4s forwards; }
-.splash .spinner { animation: spinner .8s steps(8) infinite, fade-in-forwards .3s .4s forwards; }
+.skeleton { opacity: 0; animation: fade-in-forwards .3s .4s forwards; }
 @keyframes fade-in-forwards { to { opacity: 1; } }
+.skeleton i {
+  display: block;
+  background: linear-gradient(90deg, var(--fill) 30%, var(--fill-2) 50%, var(--fill) 70%) 0 0 / 300% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
+.skeleton__nav { display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
+.skeleton__line { height: 12px; border-radius: 6px; margin: 16px 16px 8px; }
+.skeleton__nav .skeleton__line { margin: 0; height: 20px; border-radius: 10px; }
+.skeleton__dot { width: 28px; height: 28px; border-radius: 50%; }
+.skeleton__brand { display: flex; align-items: center; gap: 12px; }
+.skeleton__logo { width: 30px; height: 30px; border-radius: 7px; }
+.skeleton__tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: var(--tabbar-h);
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--bar-bg);
+  border-top: var(--hair) solid var(--sep);
+}
+.skeleton__title { width: 40%; height: 34px; border-radius: 10px; margin: 24px 0 12px; }
+.skeleton__group { list-style: none; margin: 0 0 8px; padding: 0; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); }
+.skeleton__row { position: relative; display: flex; align-items: center; gap: 12px; padding: 10px 16px; min-height: 66px; box-sizing: border-box; }
+.skeleton__row + .skeleton__row::before { content: ''; position: absolute; top: 0; left: 72px; right: 0; border-top: var(--hair) solid var(--sep); }
+.skeleton__tile { flex: none; width: 44px; height: 46px; border-radius: 10px; }
+.skeleton__lines { flex: 1; display: grid; gap: 8px; }
+.skeleton__lines i { height: 12px; border-radius: 6px; }
+.skeleton__ring { flex: none; width: 34px; height: 34px; border-radius: 50%; }
 
 /* Loading indicator (ui.js spinner): spokes turn in 8 steps, like iOS */
 .spinner { flex: none; color: var(--label-2); stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; animation: spinner .8s steps(8) infinite; }

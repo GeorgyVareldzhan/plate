@@ -21,10 +21,26 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Shown until the data is loaded (app.js hides it); the spinner appears only if loading takes a while -->
+  <!-- Skeleton of the day list until the data is loaded (app.js removes it); appears only if loading takes a while -->
   <div id="splash" class="splash" aria-hidden="true">
-    <img src="icons/logo.svg" alt="" width="96" height="96">
-    <svg class="spinner" width="24" height="24" viewBox="0 0 24 24"><line x1="12" y1="3" x2="12" y2="7" transform="rotate(0 12 12)" opacity="0.125"/><line x1="12" y1="3" x2="12" y2="7" transform="rotate(45 12 12)" opacity="0.250"/><line x1="12" y1="3" x2="12" y2="7" transform="rotate(90 12 12)" opacity="0.375"/><line x1="12" y1="3" x2="12" y2="7" transform="rotate(135 12 12)" opacity="0.500"/><line x1="12" y1="3" x2="12" y2="7" transform="rotate(180 12 12)" opacity="0.625"/><line x1="12" y1="3" x2="12" y2="7" transform="rotate(225 12 12)" opacity="0.750"/><line x1="12" y1="3" x2="12" y2="7" transform="rotate(270 12 12)" opacity="0.875"/><line x1="12" y1="3" x2="12" y2="7" transform="rotate(315 12 12)" opacity="1.000"/></svg>
+    <div class="app skeleton">
+      <div class="skeleton__nav"><span class="skeleton__brand"><i class="skeleton__logo"></i><i class="skeleton__line" style="width:72px"></i></span><span class="skeleton__brand"><i class="skeleton__dot"></i><i class="skeleton__dot"></i></span></div>
+      <i class="skeleton__title"></i>
+      <i class="skeleton__line" style="width:40%"></i>
+      <ul class="skeleton__group">
+        <li class="skeleton__row"><i class="skeleton__tile"></i><span class="skeleton__lines"><i style="width:45%"></i><i style="width:70%"></i></span><i class="skeleton__ring"></i></li>
+        <li class="skeleton__row"><i class="skeleton__tile"></i><span class="skeleton__lines"><i style="width:45%"></i><i style="width:70%"></i></span><i class="skeleton__ring"></i></li>
+        <li class="skeleton__row"><i class="skeleton__tile"></i><span class="skeleton__lines"><i style="width:45%"></i><i style="width:70%"></i></span><i class="skeleton__ring"></i></li>
+        <li class="skeleton__row"><i class="skeleton__tile"></i><span class="skeleton__lines"><i style="width:45%"></i><i style="width:70%"></i></span><i class="skeleton__ring"></i></li>
+      </ul>
+      <i class="skeleton__line" style="width:40%"></i>
+      <ul class="skeleton__group">
+        <li class="skeleton__row"><i class="skeleton__tile"></i><span class="skeleton__lines"><i style="width:45%"></i><i style="width:70%"></i></span><i class="skeleton__ring"></i></li>
+        <li class="skeleton__row"><i class="skeleton__tile"></i><span class="skeleton__lines"><i style="width:45%"></i><i style="width:70%"></i></span><i class="skeleton__ring"></i></li>
+        <li class="skeleton__row"><i class="skeleton__tile"></i><span class="skeleton__lines"><i style="width:45%"></i><i style="width:70%"></i></span><i class="skeleton__ring"></i></li>
+      </ul>
+    </div>
+    <div class="skeleton skeleton__tabbar"><i class="skeleton__dot"></i><i class="skeleton__dot"></i><i class="skeleton__dot"></i></div>
   </div>
   <!--
     UI text is English by default and translated at startup (js/i18n.js):
