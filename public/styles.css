@@ -122,6 +122,25 @@ body[data-view="day"] .app { padding-bottom: calc(env(safe-area-inset-bottom) + 
 /* Screens switch without animation, like iOS tabs: the layer animation made Safari
    repaint hairline separators after it finished — the lines flickered */
 
+/* Swipe back from the left edge (backswipe.js): the screen follows the finger
+   over a copy of the parent screen */
+.back-under {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: var(--bg);
+  pointer-events: none;
+}
+body[data-view] .back-under .tabbar { display: flex; }
+body.is-back-swiping .app:not(.back-under) {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  background: var(--bg);
+  box-shadow: 0 0 24px rgba(0, 0, 0, .18);
+}
+
 /* ---------- Navbar and titles ---------- */
 
 /* App logo and name in the main screen header */
@@ -722,6 +741,7 @@ button.row:active, .row--tap:active { background: var(--row-active); }
   transition: transform .3s var(--ease);
 }
 .totals-bar.is-visible { transform: translateY(var(--kb-offset, 0px)); }
+body:not([data-view="day"]) .totals-bar { display: none; }
 .totals-bar__inner { max-width: 568px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
 .totals-bar .ring { --size: 40px; }
 .tb__body { flex: 1; min-width: 0; display: grid; gap: 2px; }

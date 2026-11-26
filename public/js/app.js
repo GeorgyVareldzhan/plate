@@ -10,6 +10,7 @@ import { initDishes, showDishes, showDish, flushDish } from './dishes.js';
 import { initPicker } from './picker.js';
 import { setupAutoUpdate, takeRestoredView } from './update.js';
 import { initScrollLock } from './scrolllock.js';
+import { initBackSwipe } from './backswipe.js';
 
 registerView('auth', () => {});
 registerView('days', showDays);
@@ -44,6 +45,10 @@ try {
     initDays();
     initDishes();
     initPicker();
+    initBackSwipe({
+      day: { parent: 'days', back: async () => { await flushDay(); await go('days'); } },
+      dish: { parent: 'dishes', back: async () => { await flushDish(); await go('dishes'); } },
+    });
     await go(...(takeRestoredView() || ['days']));
     db.onRemoteChange(refreshSoon);
   }
