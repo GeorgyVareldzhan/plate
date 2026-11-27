@@ -17,14 +17,20 @@
  *
  * Screens read from an in-memory mirror kept up to date by snapshot listeners, so reads are instant
  * and never wait for the network. Writes update the mirror at once and are synced in the background.
+ * Every change of the mirror bumps `revision`, so Vue computeds that read the data recompute.
  */
 import {
   collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, waitForPendingWrites, getDocFromServer, getDocsFromServer,
 } from 'firebase/firestore';
+import { shallowRef, toRaw } from 'vue';
 import { firestore } from './firebase.js';
 
 const USER_STORES = ['products', 'days', 'dishes', 'meta'];
 const cache = { catalog: new Map(), products: new Map(), days: new Map(), dishes: new Map(), meta: new Map() };
+
+/** Bumped on every change of the mirror: read it in a computed to recompute when data changes */
+export const revision = shallowRef(0);
+const changed = () => { revision.value += 1; };
 
 let uid = null;
 let pending = 0;
@@ -35,7 +41,13 @@ const ref = (store, id) => (store === 'catalog' || store === 'starterDishes'
   ? doc(firestore, store, id)
   : doc(firestore, 'users', uid, store, id));
 const newId = () => doc(collection(firestore, 'ids')).id;
-const clone = (v) => (v === undefined ? undefined : structuredClone(v));
+/** Deep copy of plain data; also unwraps Vue reactive proxies (structuredClone can't copy them) */
+function clone(v) {
+  const raw = toRaw(v);
+  if (Array.isArray(raw)) return raw.map(clone);
+  if (raw && typeof raw === 'object') return Object.fromEntries(Object.entries(raw).map(([k, x]) => [k, clone(x)]));
+  return raw;
+}
 
 /** Track a write until the server confirms it */
 function track(promise) {
@@ -65,6 +77,7 @@ function start(userId) {
         if (change.type === 'removed') cache[store].delete(change.doc.id);
         else cache[store].set(change.doc.id, { ...change.doc.data(), id: change.doc.id, ...(store === 'catalog' && { catalog: true }) });
       }
+      if (snap.docChanges().length) changed();
       resolve();
       // Changes from another device: let the open screen redraw
       if (!first && !snap.metadata.hasPendingWrites && snap.docChanges().length) remoteListener();
@@ -90,13 +103,16 @@ function get(store, id) {
 function put(store, value) {
   if (store === 'products' && value.catalog) throw new Error('Catalog products are read-only');
   const id = value.id ? String(value.id) : newId();
-  cache[store].set(id, clone({ ...value, id }));
-  track(setDoc(ref(store, id), withoutId(value)));
+  const data = clone(value);
+  cache[store].set(id, { ...data, id });
+  changed();
+  track(setDoc(ref(store, id), withoutId(data)));
   return id;
 }
 
 function remove(store, id) {
   cache[store].delete(String(id));
+  changed();
   track(deleteDoc(ref(store, String(id))));
 }
 
@@ -109,8 +125,9 @@ function batch(ops) {
     for (const op of ops.slice(i, i + 450)) {
       if (op.put) {
         const id = op.value.id ? String(op.value.id) : newId();
-        cache[op.put].set(id, clone({ ...op.value, id }));
-        b.set(ref(op.put, id), withoutId(op.value));
+        const data = clone(op.value);
+        cache[op.put].set(id, { ...data, id });
+        b.set(ref(op.put, id), withoutId(data));
         ids.push(id);
       } else {
         cache[op.delete].delete(String(op.id));
@@ -119,6 +136,7 @@ function batch(ops) {
     }
     track(b.commit());
   }
+  changed();
   return ids;
 }
 

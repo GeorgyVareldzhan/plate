@@ -5,8 +5,7 @@
  * to English for missing keys. On first launch the language is detected from the browser and
  * saved on the device (localStorage), so it does not change on its own later.
  *
- * Static markup is translated through attributes: data-i18n (text), data-i18n-aria (aria-label),
- * data-i18n-placeholder (placeholder). Code uses t(key, params).
+ * Templates and code use t(key, params). The language is fixed for the session: switching it reloads the page.
  */
 import en from './i18n/en.js';
 import ru from './i18n/ru.js';
@@ -42,7 +41,6 @@ export function initLanguage() {
   const saved = readSaved();
   apply(saved && DICTIONARIES[saved] ? saved : detectLanguage());
   if (!saved) saveLanguage(language);
-  translatePage();
 }
 
 const STORAGE_KEY = 'language';
@@ -67,13 +65,6 @@ export function t(key, params = {}) {
     entry = entry[form] ?? entry.other ?? Object.values(entry)[0];
   }
   return entry.replace(/\{(\w+)\}/g, (match, name) => (params[name] ?? match));
-}
-
-/** Translate static markup marked with data-i18n* attributes */
-export function translatePage(root = document) {
-  for (const el of root.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n);
-  for (const el of root.querySelectorAll('[data-i18n-aria]')) el.setAttribute('aria-label', t(el.dataset.i18nAria));
-  for (const el of root.querySelectorAll('[data-i18n-placeholder]')) el.placeholder = t(el.dataset.i18nPlaceholder);
 }
 
 /** "P 12.5 · F 3 · C 40" in the current language; digits — 0 or 1 decimal places */

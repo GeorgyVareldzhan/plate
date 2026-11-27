@@ -4,26 +4,12 @@
  * The service worker checks for a new version when the app is opened and when it returns from the background.
  * The new version installs itself (skipWaiting + clients.claim in sw.js), after which the page reloads
  * once. If the user is typing or a card is open at that moment, the reload waits until they are
- * done. Edits are saved before the reload, and the same screen is reopened after it.
+ * done. Edits are saved before the reload; the same screen opens after it, as it is in the URL.
  */
-import { currentView } from './nav.js';
-import { flushDay } from './days.js';
-import { flushDish } from './dishes.js';
-
-const RESTORE_KEY = 'restore-view';
+import { flushEdits } from './store.js';
 
 let pending = false;
 let reloading = false;
-
-/** Screen that was open before the auto-reload: [name, ...args] or null */
-export function takeRestoredView() {
-  try {
-    const saved = JSON.parse(sessionStorage.getItem(RESTORE_KEY));
-    sessionStorage.removeItem(RESTORE_KEY);
-    if (saved?.name) return [saved.name, ...(saved.args || [])];
-  } catch { /* no access to sessionStorage — open the default screen */ }
-  return null;
-}
 
 export function setupAutoUpdate() {
   // No service worker on the dev server: it would serve stale files
@@ -65,13 +51,9 @@ async function tryReload() {
   reloading = true;
 
   try {
-    await Promise.all([flushDay(), flushDish()]);
+    await flushEdits();
   } catch (error) {
     console.error(error);
   }
-  try {
-    sessionStorage.setItem(RESTORE_KEY, JSON.stringify(currentView));
-  } catch { /* not a big deal — the day list will open */ }
-
   location.reload();
 }

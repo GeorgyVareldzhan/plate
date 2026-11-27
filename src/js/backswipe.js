@@ -3,11 +3,14 @@
  * screen to the right, revealing the parent screen underneath. Released past a third of the width
  * (or flicked) it goes back, otherwise it slides into place.
  *
- * The parent screen underneath is a static copy of its last render; the real one is rendered by
- * go() once the gesture completes, so the swap is seamless.
+ * The parent screen underneath is a static copy of its last render (the tab screens stay alive
+ * in a KeepAlive and register their root element in screenEls); the real one is shown once the
+ * gesture completes, so the swap is seamless.
  */
 import { h } from './dom.js';
-import { currentView } from './nav.js';
+
+/** Root elements of the parent screens by route name, kept up to date by the screens themselves */
+export const screenEls = {};
 
 const EDGE = 24; // px from the left edge where the gesture may start
 const SLOP = 8; // px before deciding the direction
@@ -17,25 +20,28 @@ const PARALLAX = 0.3; // the parent screen starts shifted left by this share of 
 const DURATION = 250; // ms
 const EASE = 'cubic-bezier(.2, .8, .2, 1)';
 
-/** screens: { [view]: { parent: view, back: async () => {} } } */
-export function initBackSwipe(screens) {
-  const app = document.querySelector('main.app');
+/**
+ * screens: { [route name]: { parent: route name, back: async () => {} } };
+ * current() — name of the current route
+ */
+export function initBackSwipe(screens, { current }) {
   let g = null; // current gesture
 
-  const layers = () => [app, document.querySelector('#day-totals'), g.under];
+  // The screen and the day totals bar (outside the screen, fixed at the bottom) move together
+  const moving = () => [document.querySelector('main.app'), document.querySelector('#day-totals')].filter(Boolean);
+  const layers = () => [...moving(), g.under];
   const place = (x, animate) => {
     const width = innerWidth;
     for (const el of layers()) el.style.transition = animate ? `translate ${DURATION}ms ${EASE}` : 'none';
-    app.style.translate = `${x}px 0`;
-    document.querySelector('#day-totals').style.translate = `${x}px 0`;
+    for (const el of moving()) el.style.translate = `${x}px 0`;
     g.under.style.translate = `${-(width - x) * PARALLAX}px 0`;
   };
 
   /** Put a copy of the parent screen (and its tab bar) under the current one */
   function begin() {
     document.activeElement?.blur?.();
-    const view = document.querySelector(`#view-${g.screen.parent}`).cloneNode(true);
-    view.hidden = false;
+    const source = screenEls[g.screen.parent];
+    const view = source ? source.cloneNode(true) : h('section');
     const tabbar = document.querySelector('.tabbar').cloneNode(true);
     for (const b of tabbar.querySelectorAll('button')) {
       if (b.dataset.tab === g.screen.parent) b.setAttribute('aria-current', 'page');
@@ -80,7 +86,7 @@ export function initBackSwipe(screens) {
     if (g || e.touches.length !== 1) return;
     const { clientX, clientY } = e.touches[0];
     if (clientX > EDGE) return;
-    const screen = screens[currentView.name];
+    const screen = screens[current()];
     if (!screen || document.querySelector('dialog[open]')) return;
     g = { screen, startX: clientX, startY: clientY, active: false, x: 0, velocity: 0, t: e.timeStamp };
   }, { capture: true, passive: true });

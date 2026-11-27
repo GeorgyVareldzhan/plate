@@ -1,13 +1,11 @@
-/** Sign-in screen, account sheet and the "unsaved changes" dot */
+/** Account: sign-in errors, setup of a new account, sync status and logging out */
+import { shallowRef } from 'vue';
 import { terminate, clearIndexedDbPersistence } from 'firebase/firestore';
-import { $ } from './dom.js';
-import { t, getLanguage } from './i18n.js';
-import { auth, firestore, signIn, signUp, resetPassword, logOut } from './firebase.js';
+import { firestore, logOut } from './firebase.js';
 import { db } from './db.js';
 
-/* ---------- Sign in ---------- */
-
-const ERRORS = {
+/** Firebase error code → translation key */
+export const AUTH_ERRORS = {
   'auth/invalid-credential': 'auth.err.credentials',
   'auth/wrong-password': 'auth.err.credentials',
   'auth/user-not-found': 'auth.err.credentials',
@@ -20,57 +18,7 @@ const ERRORS = {
   'auth/too-many-requests': 'auth.err.tooMany',
 };
 
-export function initAuth() {
-  const form = $('#auth-form');
-  const errorEl = $('#auth-error');
-  const submit = $('#auth-submit');
-  const switchBtn = $('#auth-switch');
-  let signingUp = false;
-
-  const showError = (key) => {
-    errorEl.textContent = t(key);
-    errorEl.hidden = false;
-  };
-  const setMode = (up) => {
-    signingUp = up;
-    submit.textContent = t(up ? 'auth.signUp' : 'auth.signIn');
-    switchBtn.textContent = t(up ? 'auth.toSignIn' : 'auth.toSignUp');
-    form.elements.password.autocomplete = up ? 'new-password' : 'current-password';
-    errorEl.hidden = true;
-  };
-
-  switchBtn.addEventListener('click', () => setMode(!signingUp));
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = form.elements.email.value.trim();
-    const password = form.elements.password.value;
-    if (!email) return showError('auth.err.email');
-    if (signingUp && password.length < 6) return showError('auth.err.weak');
-    errorEl.hidden = true;
-    submit.disabled = true;
-    try {
-      await (signingUp ? signUp : signIn)(email, password);
-      location.reload(); // start over with the user's data
-    } catch (error) {
-      console.error(error);
-      showError(ERRORS[error.code] ?? 'auth.err.other');
-      submit.disabled = false;
-    }
-  });
-
-  $('#auth-reset').addEventListener('click', async () => {
-    const email = form.elements.email.value.trim();
-    if (!email) return showError('auth.err.resetEmail');
-    try {
-      await resetPassword(email, getLanguage());
-      errorEl.hidden = true;
-      alert(t('auth.resetSent', { email }));
-    } catch (error) {
-      showError(ERRORS[error.code] ?? 'auth.err.other');
-    }
-  });
-}
+export const authErrorKey = (error) => AUTH_ERRORS[error?.code] ?? 'auth.err.other';
 
 /* ---------- Account setup after sign-in ---------- */
 
@@ -85,49 +33,23 @@ export async function setupAccount() {
   db.put('meta', { id: 'account', createdAt: now });
 }
 
-/* ---------- Account sheet ---------- */
+/* ---------- Sync status ---------- */
 
-const dialog = $('#account-dialog');
-const button = $('#account-btn');
+/** Writes not yet confirmed by the server, and whether the device is online */
+export const syncState = shallowRef({ pending: 0, online: navigator.onLine });
 
-function statusText() {
-  if (!db.pending()) return t('account.synced');
-  return navigator.onLine ? t('account.syncing') : t('account.offline');
+export function watchSyncState() {
+  const update = () => { syncState.value = { pending: db.pending(), online: navigator.onLine }; };
+  db.onStatusChange(update);
+  window.addEventListener('online', update);
+  window.addEventListener('offline', update);
+  update();
 }
 
-function updateStatus() {
-  button.classList.toggle('has-pending', db.pending() > 0);
-  $('#account-status').textContent = statusText();
-}
-
-export function initAccount() {
-  db.onStatusChange(updateStatus);
-  window.addEventListener('online', updateStatus);
-  window.addEventListener('offline', updateStatus);
-  updateStatus();
-
-  button.addEventListener('click', () => {
-    $('#account-email').textContent = auth.currentUser?.email ?? '';
-    updateStatus();
-    dialog.showModal();
-  });
-
-  $('#account-reset').addEventListener('click', async () => {
-    const email = auth.currentUser?.email;
-    try {
-      await resetPassword(email, getLanguage());
-      alert(t('auth.resetSent', { email }));
-    } catch (error) {
-      alert(t(ERRORS[error.code] ?? 'auth.err.other'));
-    }
-  });
-
-  $('#account-logout').addEventListener('click', async () => {
-    if (!confirm(t(db.pending() ? 'account.logOutPending' : 'account.logOutConfirm'))) return;
-    await logOut();
-    // Remove the user's data from the device
-    await terminate(firestore);
-    await clearIndexedDbPersistence(firestore).catch((error) => console.error(error));
-    location.reload();
-  });
+/** Log out and remove the user's data from the device, then start over */
+export async function logOutAndClear() {
+  await logOut();
+  await terminate(firestore);
+  await clearIndexedDbPersistence(firestore).catch((error) => console.error(error));
+  location.reload();
 }
