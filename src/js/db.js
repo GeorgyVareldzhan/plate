@@ -20,7 +20,7 @@
  */
 import {
   collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, waitForPendingWrites, getDocFromServer, getDocsFromServer,
-} from '../vendor/firebase/firebase-firestore.js';
+} from 'firebase/firestore';
 import { firestore } from './firebase.js';
 
 const USER_STORES = ['products', 'days', 'dishes', 'meta'];

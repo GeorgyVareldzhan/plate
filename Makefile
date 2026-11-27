@@ -1,20 +1,23 @@
 PYTHON ?= python3
 PORT   ?= 8080
-ROOT   := public
 
 .DEFAULT_GOAL := help
-.PHONY: help serve lan icons
+.PHONY: help install dev lan preview icons
 
 help: ## List commands
 	@grep -E '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  make %-8s %s\n", $$1, $$2}'
 
-serve: ## Run locally at http://localhost:8080 (other port: PORT=9000)
-	@echo "Откройте: http://localhost:$(PORT)"
-	$(PYTHON) tools/serve.py --port $(PORT) --bind 127.0.0.1 --dir $(ROOT)
+install: ## Install dependencies (needs Node 20.19+ or 22.12+)
+	npm ci
 
-lan: ## Expose to a phone on the local network (offline mode will not work — HTTPS is required)
-	@echo "Откройте на телефоне: http://$$(hostname -I | awk '{print $$1}'):$(PORT)"
-	$(PYTHON) tools/serve.py --port $(PORT) --bind 0.0.0.0 --dir $(ROOT)
+dev: ## Run the dev server at http://localhost:8080 (other port: PORT=9000); no service worker
+	npx vite --port $(PORT)
+
+lan: ## Expose the dev server to a phone on the local network (offline mode will not work — HTTPS is required)
+	npx vite --port $(PORT) --host
+
+preview: ## Build and serve the production version (with the service worker) at http://localhost:8080
+	npm run build && npx vite preview --port $(PORT)
 
 icons: ## Regenerate icons (requires Pillow)
-	$(PYTHON) tools/icons.py $(ROOT)/icons
+	$(PYTHON) tools/icons.py public/icons

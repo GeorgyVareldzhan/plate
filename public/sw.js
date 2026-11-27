@@ -1,56 +1,13 @@
 'use strict';
 
-// Bump the version whenever any app file changes — the old cache will be deleted
-// An open app reloads itself once the new version is installed (see js/update.js)
-const CACHE = 'calc-v104';
+// Filled in by the build (vite.config.js): a hash of the app files and their list.
+// Any change to the app changes the version — the old cache is deleted and an open app
+// reloads itself once the new version is installed (see js/update.js)
+const CACHE = `plate-${'__VERSION__'}`;
 // Bump when the files in vendor/tesseract change
 const OCR_CACHE = 'plate-ocr-v1';
 
-const ASSETS = [
-  './',
-  'index.html',
-  'styles.css',
-  'js/account.js',
-  'js/app.js',
-  'js/calc.js',
-  'js/days.js',
-  'js/dishes.js',
-  'js/db.js',
-  'js/dom.js',
-  'js/firebase.js',
-  'js/i18n.js',
-  'js/i18n/en.js',
-  'js/i18n/icon-rules.ru.js',
-  'js/i18n/label-words.js',
-  'js/i18n/ru.js',
-  'js/i18n/search.ru.js',
-  'js/icons.js',
-  'js/itemrow.js',
-  'js/label.js',
-  'js/nav.js',
-  'js/scrolllock.js',
-  'js/backswipe.js',
-  'js/sheetswipe.js',
-  'js/reorder.js',
-  'js/search.js',
-  'js/searchbar.js',
-  'js/usage.js',
-  'js/ocr.js',
-  'js/picker.js',
-  'js/products.js',
-  'js/share.js',
-  'js/ui.js',
-  'js/update.js',
-  'manifest.webmanifest',
-  'icons/icon-192.png',
-  'icons/icon-512.png',
-  'icons/apple-touch-icon.png',
-  'icons/favicon-32.png',
-  'icons/logo.svg',
-  'vendor/firebase/firebase-app.js',
-  'vendor/firebase/firebase-auth.js',
-  'vendor/firebase/firebase-firestore.js',
-];
+const ASSETS = [/* __ASSETS__ */];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

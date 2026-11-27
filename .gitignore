@@ -8,3 +8,7 @@ __pycache__/
 # System files
 .DS_Store
 firebase-debug.log
+
+# Node
+node_modules/
+dist/

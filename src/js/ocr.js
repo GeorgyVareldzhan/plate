@@ -3,7 +3,8 @@
  * English models. Nothing is sent anywhere. The engine (~4 MB) and models (~6 MB) load on
  * the first photo; the service worker keeps them, so later photos work offline.
  */
-const BASE = new URL('../vendor/tesseract/', import.meta.url).href;
+// Served as is from public/vendor/tesseract (not bundled): the engine loads its own files by URL
+const BASE = new URL('vendor/tesseract/', document.baseURI).href;
 
 // Long side of the image given to the recognizer: phone photos are scaled down to it
 const MAX_SIDE = 2800;
@@ -15,7 +16,7 @@ let progressHandler = null;
 
 function getWorker() {
   workerPromise ??= (async () => {
-    const { default: Tesseract } = await import('../vendor/tesseract/tesseract.esm.min.js');
+    const { default: Tesseract } = await import(/* @vite-ignore */ `${BASE}tesseract.esm.min.js`);
     return Tesseract.createWorker(['rus', 'eng'], Tesseract.OEM.LSTM_ONLY, {
       workerPath: `${BASE}worker.min.js`,
       corePath: BASE,

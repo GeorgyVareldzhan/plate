@@ -26,7 +26,8 @@ export function takeRestoredView() {
 }
 
 export function setupAutoUpdate() {
-  if (!('serviceWorker' in navigator)) return;
+  // No service worker on the dev server: it would serve stale files
+  if (import.meta.env.DEV || !('serviceWorker' in navigator)) return;
 
   // No controller — this is the first install (or a hard reload): the page is already fresh
   const hadController = Boolean(navigator.serviceWorker.controller);

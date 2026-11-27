@@ -1,14 +1,14 @@
 /**
  * Firebase: app, Firestore with an offline cache, and email/password sign-in.
- * The SDK is vendored in vendor/firebase (same origin) so the service worker caches it for offline use.
+ * The SDK is bundled into the app, so the service worker caches it with the rest for offline use.
  */
-import { initializeApp } from '../vendor/firebase/firebase-app.js';
+import { initializeApp } from 'firebase/app';
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-} from '../vendor/firebase/firebase-firestore.js';
+} from 'firebase/firestore';
 import {
   getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut,
-} from '../vendor/firebase/firebase-auth.js';
+} from 'firebase/auth';
 
 const app = initializeApp({
   apiKey: 'AIzaSyCO1oXH0PFBISeO2ITyZq6N3ctDtTwDFmI',

@@ -1,5 +1,5 @@
 /** Sign-in screen, account sheet and the "unsaved changes" dot */
-import { terminate, clearIndexedDbPersistence } from '../vendor/firebase/firebase-firestore.js';
+import { terminate, clearIndexedDbPersistence } from 'firebase/firestore';
 import { $ } from './dom.js';
 import { t, getLanguage } from './i18n.js';
 import { auth, firestore, signIn, signUp, resetPassword, logOut } from './firebase.js';
