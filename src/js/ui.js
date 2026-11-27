@@ -1,26 +1,13 @@
-/** Shared UI elements: SVG icons, progress ring, swipe to delete */
-import { h } from './dom.js';
+/** Shared UI helpers: motion preference, progress colors, system icon paths, the action sheet state */
+import { shallowRef } from 'vue';
 import { statusClass } from './calc.js';
-import { t } from './i18n.js';
-import { isDragging } from './reorder.js';
-
-const SVG_NS = 'http://www.w3.org/2000/svg';
 
 /** The user asked the system for less motion: skip decorative animations */
 export const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-export function svg(tag, attrs = {}, ...children) {
-  const el = document.createElementNS(SVG_NS, tag);
-  for (const [key, value] of Object.entries(attrs)) {
-    if (value != null) el.setAttribute(key, value);
-  }
-  el.append(...children);
-  return el;
-}
+/* ---------- System icons (SF Symbols style), drawn by AppIcon.vue ---------- */
 
-/* ---------- System icons (SF Symbols style) ---------- */
-
-const PATHS = {
+export const ICON_PATHS = {
   plus: 'M12 5v14M5 12h14',
   minus: 'M5 12h14',
   chevronLeft: 'M15 5l-7 7 7 7',
@@ -35,86 +22,17 @@ const PATHS = {
   target: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zM12 11.5v1',
   calendar: 'M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM4 10h16M9 3v4M15 3v4',
   close: 'M6 6l12 12M18 6L6 18',
+  account: 'M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM4 21c1-4 4.5-6 8-6s7 2 8 6',
 };
 
-/** Line icon; size in px */
-export function icon(name, size = 20, extraClass = '') {
-  return svg('svg', {
-    class: `icon ${extraClass}`.trim(),
-    width: size,
-    height: size,
-    viewBox: '0 0 24 24',
-    'aria-hidden': 'true',
-  }, svg('path', { d: PATHS[name] }));
-}
-
-/* ---------- Loading indicator ---------- */
-
-/** Spinner like UIActivityIndicatorView: 8 spokes fading in turn (same markup as the splash in index.html) */
-export function spinner(size = 20) {
-  return svg('svg', { class: 'spinner', width: size, height: size, viewBox: '0 0 24 24', 'aria-hidden': 'true' },
-    ...Array.from({ length: 8 }, (_, i) => svg('line', {
-      x1: 12, y1: 3, x2: 12, y2: 7, transform: `rotate(${i * 45} 12 12)`, opacity: ((i + 1) / 8).toFixed(3),
-    })));
-}
-
-/* ---------- Progress ring ---------- */
-
-/**
- * Ring like in Apple Fitness: value as a fraction of target.
- * status — 'ok' | 'bad' | null (no target set — neutral color).
- * from — value to animate from (e.g. 0 when a list appears), otherwise drawn as is.
- */
-export function ring({ value, target, status, size = 120, stroke = 12, children = [], from = null }) {
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  const share = (v) => (target > 0 ? Math.min(1, Math.max(0, v / target)) : 0);
-  const offset = (v) => (c * (1 - share(v))).toFixed(2);
-  const center = size / 2;
-  const animate = from != null && share(from) !== share(value) && !reducedMotion();
-  const start = animate ? from : value;
-
-  const arc = svg('circle', {
-    class: 'ring__value',
-    cx: center,
-    cy: center,
-    r,
-    'stroke-width': stroke,
-    'stroke-dasharray': c.toFixed(2),
-    'stroke-dashoffset': offset(start),
-    transform: `rotate(-90 ${center} ${center})`,
-    opacity: share(start) > 0 || animate ? 1 : 0,
-  });
-  if (animate) {
-    arc.classList.add('ring__value--intro');
-    // Two frames: the start position must be painted before the transition can run
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      arc.style.strokeDashoffset = `${offset(value)}px`; // a CSS property, so the transition runs in Safari too
-      if (!share(value)) arc.setAttribute('opacity', 0);
-    }));
-  }
-
-  return h('div', { class: `ring ${statusClass(status)}`, style: `--size:${size}px` },
-    svg('svg', { width: size, height: size, viewBox: `0 0 ${size} ${size}`, 'aria-hidden': 'true' },
-      svg('circle', { class: 'ring__track', cx: center, cy: center, r, 'stroke-width': stroke }),
-      arc,
-    ),
-    children.length ? h('div', { class: 'ring__center' }, ...children) : null,
-  );
-}
-
-/** Progress bar; progress — on the way to a "not less than" target, see targetProgress */
-export function bar(value, target, status, progress = null) {
-  const pct = target > 0 ? Math.min(100, (value / target) * 100) : 0;
-  return h('div', { class: `bar ${progressClass(status, progress)}`, style: progressStyle(progress) },
-    h('i', { style: `width:${pct}%` }));
-}
+/* ---------- Progress colors ---------- */
 
 /** Mix of two color variables: share 0 — `from`, 1 — `to` */
 const mix = (from, to, share) => `color-mix(in srgb, var(${to}) ${Math.round(share * 100)}%, var(${from}))`;
 
 /** Class and style for an element colored by target status, or red → orange → green by progress */
 export const progressClass = (status, progress) => (progress == null ? statusClass(status) : 'has-progress');
+
 export function progressStyle(progress) {
   if (progress == null) return '';
   const [text, fill] = progress < 0.5
@@ -123,131 +41,17 @@ export function progressStyle(progress) {
   return `--progress-text:${text};--progress-fill:${fill}`;
 }
 
-/* ---------- Swipe left to delete (as in iOS) ---------- */
+/* ---------- Bottom action sheet (ActionSheet.vue) ---------- */
 
-const ACTION_WIDTH = 88;
-let openRow = null;
-
-// A tap anywhere else closes the open row
-document.addEventListener('pointerdown', (e) => {
-  if (openRow && !openRow.el.contains(e.target)) openRow.close();
-}, true);
-
-/**
- * Swipeable list row: returns an <li> with content inside and a "Delete" button beneath it.
- * A swipe doesn't start on inputs or controls (stepper, segmented control).
- */
-export function swipeRow(content, onDelete, { label = t('action.delete'), className = '' } = {}) {
-  const action = h('button', { type: 'button', class: 'swipe__delete', onclick: () => onDelete() }, label);
-  const row = h('li', { class: `swipe ${className}`.trim() }, h('div', { class: 'swipe__actions' }, action), content);
-  content.classList.add('swipe__content');
-
-  let startX = 0;
-  let startY = 0;
-  let dx = 0;
-  let base = 0;
-  let tracking = false;
-  let horizontal = false;
-  let pointerId = null;
-
-  // The "Delete" button is visible only while the row is shifted — otherwise it may show through on press
-  const reveal = (on) => row.classList.toggle('is-revealed', on);
-  content.addEventListener('transitionend', () => {
-    if (!content.style.transform) reveal(false);
-  });
-
-  const move = (x, animate) => {
-    if (x) reveal(true);
-    content.style.transition = animate ? 'transform .28s cubic-bezier(.2,.8,.2,1)' : 'none';
-    content.style.transform = x ? `translateX(${x}px)` : '';
-    if (!x && !animate) reveal(false);
-  };
-  const api = {
-    el: row,
-    close() {
-      move(0, true);
-      row.classList.remove('is-open');
-      if (openRow === api) openRow = null;
-    },
-    open() {
-      if (openRow && openRow !== api) openRow.close();
-      move(-ACTION_WIDTH, true);
-      row.classList.add('is-open');
-      openRow = api;
-    },
-  };
-
-  content.addEventListener('pointerdown', (e) => {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    if (e.target.closest('input, .stepper, .units')) return;
-    startX = e.clientX;
-    startY = e.clientY;
-    dx = 0;
-    base = row.classList.contains('is-open') ? -ACTION_WIDTH : 0;
-    tracking = true;
-    horizontal = false;
-    pointerId = e.pointerId;
-  });
-
-  content.addEventListener('pointermove', (e) => {
-    if (!tracking || e.pointerId !== pointerId) return;
-    if (isDragging()) { tracking = false; return; }
-    const mx = e.clientX - startX;
-    const my = e.clientY - startY;
-    if (!horizontal) {
-      if (Math.abs(mx) < 8 && Math.abs(my) < 8) return;
-      if (Math.abs(my) > Math.abs(mx)) {
-        tracking = false; // vertical scroll — not our gesture
-        return;
-      }
-      horizontal = true;
-      content.setPointerCapture?.(pointerId);
-    }
-    dx = mx;
-    let x = Math.min(0, base + dx);
-    if (x < -ACTION_WIDTH) x = -ACTION_WIDTH + (x + ACTION_WIDTH) / 3; // rubber-band effect
-    move(x, false);
-  });
-
-  const end = () => {
-    if (!tracking) return;
-    tracking = false;
-    if (!horizontal) return;
-    if (base + dx < -ACTION_WIDTH / 2) api.open();
-    else api.close();
-    // After a swipe, don't treat lifting the finger as a tap on the row
-    const swallow = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
-    content.addEventListener('click', swallow, { capture: true, once: true });
-    setTimeout(() => content.removeEventListener('click', swallow, { capture: true }), 0);
-  };
-  content.addEventListener('pointerup', end);
-  content.addEventListener('pointercancel', end);
-
-  return row;
-}
-
-/* ---------- Bottom action sheets ---------- */
+/** { id, title, actions } of the open action sheet, or null */
+export const actionSheetState = shallowRef(null);
+let lastSheetId = 0;
 
 /**
  * Show an action sheet. actions: [{ label, onClick, danger? }].
- * Closes on "Cancel" or a tap on the backdrop.
+ * Closes on "Cancel" or a tap on the backdrop. onClick runs within the tap (share and file
+ * pickers need a user gesture).
  */
 export function actionSheet(title, actions) {
-  const dialog = h('dialog', { class: 'action-sheet', autofocus: true, tabindex: '-1' });
-  const close = () => dialog.close();
-  dialog.append(
-    h('div', { class: 'action-sheet__group' },
-      title ? h('div', { class: 'action-sheet__title' }, title) : null,
-      ...actions.map((a) => h('button', {
-        type: 'button',
-        class: a.danger ? 'is-danger' : '',
-        onclick: () => { close(); a.onClick(); },
-      }, a.label)),
-    ),
-    h('button', { type: 'button', class: 'action-sheet__cancel', onclick: close }, t('action.cancel')),
-  );
-  dialog.addEventListener('click', (e) => { if (e.target === dialog) close(); });
-  dialog.addEventListener('close', () => dialog.remove());
-  document.body.append(dialog);
-  dialog.showModal();
+  actionSheetState.value = { id: ++lastSheetId, title, actions };
 }

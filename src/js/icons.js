@@ -2,7 +2,8 @@
  * Product icons and categories.
  *
  * A product stores an icon key (product.icon), not an image. Currently the key is rendered as an emoji;
- * to switch to a custom drawn set, only renderIcon() needs changing — the data stays untouched.
+ * to switch to a custom drawn set, only IconTile.vue (and renderIcon for the share image) needs changing —
+ * the data stays untouched.
  * Do not rename keys: they are already saved on products on users' devices.
  *
  * If a product has no icon of its own, the icon and category are matched by name (RULES, top to bottom —
@@ -12,7 +13,6 @@
  * Emoji up to Unicode 15.1 (iOS 17.4+). Newer ones (e.g. 🫜 from iOS 18.4) are not used:
  * on older systems they show up as an empty box.
  */
-import { h } from './dom.js';
 import { RULES } from './i18n/icon-rules.ru.js';
 
 /** Icon picker grid sections: [title, { key: emoji }] */
@@ -149,18 +149,10 @@ export function productCategory(product) {
   return brand ? brand[0] : typeCategory(product);
 }
 
-/** Product icon tile */
-export function iconTile(product, size = '') {
-  const key = productIcon(product);
-  const hue = HUE[typeCategory(product)] ?? 0;
-  return h('span', {
-    class: `tile ${size}`,
-    style: `--hue:${hue}`,
-    'aria-hidden': 'true',
-  }, renderIcon(key));
-}
+/** Hue of a product's icon tile (IconTile.vue) */
+export const tileHue = (product) => HUE[typeCategory(product)] ?? 0;
 
-/** How an icon is rendered. For a drawn set, return an <svg> for the key here. */
+/** Emoji for an icon key. For a drawn set, render an <svg> by the key in IconTile.vue instead. */
 export function renderIcon(key) {
   return ICONS[key] ?? ICONS[DEFAULT_ICON];
 }

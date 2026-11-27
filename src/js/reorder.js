@@ -2,7 +2,6 @@
  * Reordering: long press on a row lifts it, then it follows the finger and can be dropped
  * into any of the given lists (e.g. another meal). Also a plain long-press helper.
  */
-import { h } from './dom.js';
 
 const SLOP = 8; // px the finger may move before a long press is cancelled
 const ROW_HOLD_MS = 300;
@@ -66,7 +65,8 @@ function flip(elements, mutate) {
  * Makes `row` (an <li> in one of `lists()`) draggable by a long press.
  * Sortable rows are list children with the `.swipe` class; other children (the "Add" row) stay last.
  * onDrop({ fromList, fromIndex, toList, toIndex }) — list indexes in `lists()`, row indexes among
- * sortable rows; called only when the place changed. It should update the data and re-render.
+ * sortable rows; called only when the place changed. It should update the data: the row itself is
+ * left in its old place in the DOM, and Vue moves it when it re-renders the lists.
  */
 export function sortableRow(row, { lists, onDrop }) {
   onLongPress(row, ROW_HOLD_MS, (down) => startDrag(row, down, lists(), onDrop), {
@@ -86,7 +86,9 @@ function startDrag(row, down, lists, onDrop) {
   const scroller = scrollParent(row);
   let y = down.clientY;
 
-  const placeholder = h('li', { class: 'drag-placeholder', style: `height:${rect.height}px` });
+  const placeholder = document.createElement('li');
+  placeholder.className = 'drag-placeholder';
+  placeholder.style.height = `${rect.height}px`;
   row.before(placeholder);
   Object.assign(row.style, { position: 'fixed', left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px` });
   row.classList.add('is-dragging');
@@ -155,8 +157,8 @@ function startDrag(row, down, lists, onDrop) {
       r.compareDocumentPosition(placeholder) & Node.DOCUMENT_POSITION_FOLLOWING).length;
     const target = placeholder.getBoundingClientRect();
     const finish = () => {
-      placeholder.replaceWith(row);
-      row.removeAttribute('style');
+      placeholder.remove();
+      for (const key of ['position', 'left', 'top', 'width']) row.style.removeProperty(key);
       row.classList.remove('is-dragging');
       document.body.classList.remove('is-sorting');
       // The finger lifts over the row — not a tap

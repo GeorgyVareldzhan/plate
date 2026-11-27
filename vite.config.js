@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { defineConfig } from 'vite';
+import vue from '@vitejs/plugin-vue';
 
 const OUT_DIR = 'dist';
 
@@ -50,5 +51,6 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000, // kB; most of it is the Firebase SDK
   },
   server: { port: 8080 },
-  plugins: [serviceWorkerManifest()],
+  // Images in templates (icons/…) are static files from public/, not modules to import
+  plugins: [vue({ template: { transformAssetUrls: false } }), serviceWorkerManifest()],
 });

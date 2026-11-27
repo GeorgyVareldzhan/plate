@@ -1,6 +1,4 @@
-/** Small helpers for the DOM and numbers */
-
-export const $ = (selector, root = document) => root.querySelector(selector);
+/** Small helpers: DOM elements outside Vue, number formats, debounce */
 
 /**
  * Create an element: h('li', { class: 'x', onclick: fn }, 'text', child).
@@ -61,3 +59,6 @@ export function debounce(fn, ms) {
   debounced.cancel = () => { clearTimeout(timer); timer = null; };
   return debounced;
 }
+
+/** Signed whole number: "−50", "+25" */
+export const signed = (value) => `${value < 0 ? '−' : '+'}${fmt0.format(Math.abs(value))}`;
